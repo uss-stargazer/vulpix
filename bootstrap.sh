@@ -5,10 +5,11 @@ set -e
 OVERRIDE_INSTALL="$1"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-VULPIX_REPO='uss-stargazer/vulpix'
+VULPIX_REPO="${VULPIX_REPO:-uss-stargazer/vulpix}"
+VULPIX_BRANCH="${VULPIX_BRANCH:-main}"
 VULPIX_REPO_GIT="https://github.com/$VULPIX_REPO"
-VULPIX_REPO_RAW="https://raw.githubusercontent.com/$VULPIX_REPO/refs/heads/main"
-VULPIX_REPO_TARBALL="$VULPIX_REPO_GIT/tarball/main"
+VULPIX_REPO_RAW="https://raw.githubusercontent.com/$VULPIX_REPO/refs/heads/$VULPIX_BRANCH"
+VULPIX_REPO_TARBALL="$VULPIX_REPO_GIT/tarball/$VULPIX_BRANCH"
 
 command_exists() {
   command -v "$1" &>/dev/null
@@ -53,14 +54,13 @@ bootstrap_package() {
     info "downloading $script"
     eval "$DOWNLOAD '$VULPIX_REPO_RAW/$script' > '$scriptf'"
   fi
-  bin_dirs=()
-  bins=$(source "$scriptf" "$install_dir")
-  [[ $? -eq 0 ]] || return 1
-  [[ -n "$bins" ]] && readarray -t bin_dirs <<<"$bins"
-  [[ "${#bin_dirs[@]}" -eq 0 ]] && return 1
-  debug "$1 bin dirs: ${bin_dirs[@]}"
 
-  echo # style
+  local bin_dirs=()
+  load_array_by_line_from_command bin_dirs \
+    source "$scriptf" "$install_dir" ||
+    return 1
+  debug "$1 bin dirs: ${bin_dirs[@]}"
+  [[ "${#bin_dirs[@]}" -eq 0 ]] && return 1
 
   # add to PATH (only for bash session, but that's all that's needed)
   for dir in "${bin_dirs[@]}"; do
@@ -75,7 +75,7 @@ clone_source() {
 }
 
 update_source() {
-  git -C "$1" pull origin main && git -C "$1" checkout main
+  git -C "$1" pull origin "$VULPIX_BRANCH" && git -C "$1" checkout "$VULPIX_BRANCH"
 }
 
 download_source() {
