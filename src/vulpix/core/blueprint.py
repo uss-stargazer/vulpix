@@ -139,9 +139,11 @@ class ExpandedBlueprint(Blueprint):
                     logger.error(str(e))
                     raise VulpixError(f"invalid blueprint at '{path}'")
                 expanded_extended = cls.expand(extended, path, logger)
-                merge_dicts(dclass.to_dict(expanded_extended), accumulated)
+                merge_dicts(
+                    dclass.to_dict(expanded_extended), accumulated, concat_arrays=True
+                )
 
-            merge_dicts(dclass.to_dict(bp), accumulated)
+            merge_dicts(dclass.to_dict(bp), accumulated, concat_arrays=True)
             expanded_bp = dclass.from_dict(accumulated)
             return cls.from_blueprint(expanded_bp)
         except (DaciteError, ValueError, FileNotFoundError) as e:

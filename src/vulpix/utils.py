@@ -414,11 +414,14 @@ def pretty_link_log(target: Path, link: Path, max_target_len: int) -> str:
 
 
 # https://stackoverflow.com/a/20666342
-def merge_dicts(source: dict, destination: dict) -> dict:
+def merge_dicts(source: dict, destination: dict, concat_arrays: bool = False) -> dict:
     for key, value in source.items():
         if isinstance(value, dict):
             node = destination.setdefault(key, {})
-            merge_dicts(value, node)
+            merge_dicts(value, node, concat_arrays)
+        elif isinstance(value, list) and concat_arrays:
+            node = destination.setdefault(key, [])
+            node.extend(value)
         else:
             destination[key] = value
     return destination
