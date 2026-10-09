@@ -227,6 +227,17 @@ class Cli(argparse.Namespace):
 
             manager_diffs[manager_id] = diff
 
+            # trip and abort if too much uninstalls
+            abort_threshold = bp.settings.abort_uninstall_threshold or 0
+            n_uninstall = len(diff.to_uninstall)
+            if n_uninstall >= abort_threshold:
+                self.logger.error(
+                    f"'{manager_id}' manager wants to uninstall {n_uninstall} packages"
+                )
+                raise VulpixError(
+                    f"abort_uninstall_threshold ({abort_threshold}) tripped"
+                )
+
         if self.whatif:
             return {}
 
