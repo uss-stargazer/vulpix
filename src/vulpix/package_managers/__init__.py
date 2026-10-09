@@ -26,6 +26,15 @@ class PackageDiff:
     to_reinstall: list[str] = field(default_factory=list)
     to_uninstall: list[str] = field(default_factory=list)
 
+    def remove_dups(self):
+        for l in [
+            self.to_install,
+            self.to_update,
+            self.to_reinstall,
+            self.to_uninstall,
+        ]:
+            l[:] = list(dict.fromkeys(l))
+
     def is_empty(self) -> bool:
         return all(len(v) == 0 for v in astuple(self))
 

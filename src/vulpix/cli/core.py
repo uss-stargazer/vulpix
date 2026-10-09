@@ -215,6 +215,7 @@ class Cli(argparse.Namespace):
         for manager_id, packages in bp.packages.items():
             manager = package_managers.get_manager(manager_id)
             diff = manager.get_package_diff(packages)
+            diff.remove_dups()
             self.logger.debug(f"(og) {manager_id}: {diff}")
 
             diff = package_filter(manager_id, diff)
