@@ -153,10 +153,8 @@ class ExpandedBlueprint(Blueprint):
 
 def datafile(path: Path, logger: logging.Logger) -> DataclassFile:
     def handle_error(exc_type: type[Exception], exc_value: Exception) -> bool:
-        if issubclass(exc_type, (yaml.YAMLError, DaciteError, FileNotFoundError)):
-            logger.error(str(exc_value))
-            raise VulpixError(f"invalid blueprint at '{path}'")
-        return False
+        logger.error(str(exc_value))
+        raise VulpixError(f"invalid blueprint at '{path}'")
 
     return DataclassFile(
         path,
