@@ -101,7 +101,9 @@ if ($Install) {
   Move-Item -Path $tmpInstallDir -Destination $InstallDir
 }
 
-if ((Test-Path ($Binaries | ForEach-Object { "$InstallDir\$_" })) -contains $false) {
+$binDirs = ".", "Scripts"
+
+if ((Test-Path ($binDirs | ForEach-Object { "$InstallDir\$_" })) -contains $false) {
   [Console]::Error.WriteLine('WARN: not all expected binary dirs exist')
 }
-[Console]::Out.WriteLine('.') # return the relative bin dir
+[Console]::Out.WriteLine(($binDirs -join "`n"))
