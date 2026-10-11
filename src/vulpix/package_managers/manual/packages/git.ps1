@@ -113,7 +113,6 @@ if ($Update) {
 }
 
 if ($Install) {
-  $tmpInstallDir = "$InstallDir.tmp"
   $url = Get-DownloadUrl $LatestVersion
   [Console]::Error.WriteLine("DEBUG: url=$url")
 
@@ -123,7 +122,7 @@ if ($Install) {
   $tmp = "$tmp.exe"
   Invoke-WebRequest -UseBasicParsing -OutFile "$tmp" "$url"
 
-  New-Item $tmpInstallDir -Type Directory -Force | Out-Null
+  New-Item $installDir -Type Directory -Force | Out-Null
   $configFile = New-TemporaryFile
   Set-Content -Value $GitConfigInf -Path "$configFile"
 
@@ -132,7 +131,7 @@ if ($Install) {
     '/SILENT',
     '/NORESTART', 
     '/CURRENTUSER',
-    "/DIR=`"$tmpInstallDir`"",
+    "/DIR=`"$installDir`"",
     "/LOADINF=`"$configFile`""
     '/COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"'
   )
@@ -141,10 +140,7 @@ if ($Install) {
   Remove-Item "$configFile" -Force
   Remove-Item "$tmp" -Force
 
-  if ($status) {
-    Remove-Item -Force -Recurse $InstallDir -ErrorAction SilentlyContinue
-    Move-Item -Path $tmpInstallDir -Destination $InstallDir
-  } else {
+  if (-not $status) {
     exit $status
   }
 }
