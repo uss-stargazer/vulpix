@@ -152,8 +152,10 @@ class AtomicChange:
             self.tmp.rename(self.target)
 
 
-def path_as_salt(path: Path):
-    return str(path).replace(":", "!").replace("/", "_").replace("\\", "_")
+def path_as_salt(path: str | Path):
+    if not isinstance(path, str):
+        path = str(path)
+    return path.replace(":", "!").replace("/", "_").replace("\\", "_")
 
 
 # shell utils -------------------------------------------------------------------------------------
@@ -205,17 +207,18 @@ def open_in_editor(path: Path, logger: logging.Logger):
 
 class LoggedCommand:
     cmd: list[str]
-    logger: logging.Logger
 
+    returncode: int | None = None
     stdout: list[str] | None = None
     stderr: list[str] | None = None
 
-    def __init__(self, *cmd: str, logger: logging.Logger):
+    def __init__(self, *cmd: str):
         self.cmd = list(cmd)
-        self.logger = logger
 
-    def run(self, log_stdout: bool = True) -> Self:
-        self.logger.debug(f"running external cmd: {self.cmd}")
+    def run(
+        self, logger: logging.Logger, log_stdout: bool = True, check: bool = True
+    ) -> Self:
+        logger.debug(f"running external cmd: {self.cmd}")
         if log_stdout:
             stdout_fd = subprocess.PIPE
             stderr_fd = subprocess.STDOUT
@@ -227,12 +230,14 @@ class LoggedCommand:
         log_stream = p.stdout if log_stdout else p.stderr
         if log_stream:
             for line in log_stream:
-                self.logger.info(line.strip())
-
-        if p.returncode:
-            raise VulpixError("external script failed")
+                logger.info(line.strip())
 
         stdout, stderr = p.communicate()
+
+        self.returncode = p.returncode
+        if check and p.returncode:
+            raise VulpixError("external script failed")
+
         if stdout:
             self.stdout = stdout.split("\n")
         if stderr:

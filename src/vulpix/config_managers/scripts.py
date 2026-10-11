@@ -141,7 +141,7 @@ class Script:
         else:
             raise VulpixError(f"no way to execute script: {self.path}")
 
-        LoggedCommand(*cmd, logger=logger).run()
+        LoggedCommand(*cmd).run(logger)
 
     def as_task(self) -> ManagerTask:
         name = path_as_salt(self.path.relative_to(SCRIPTS_DIR))

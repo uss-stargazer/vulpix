@@ -42,7 +42,7 @@ def install_fonts(font_dir: Path, logger: logging.Logger):
             for p in dirs.FONT_INSTALL.rglob("*"):
                 p.chmod(0o755 if p.is_dir() else 0o644)
             if command_exists("fc-cache"):
-                LoggedCommand("fc-cache", logger=logger).run()
+                LoggedCommand("fc-cache").run(logger)
 
 
 type LinkPair = tuple[Path, Path]

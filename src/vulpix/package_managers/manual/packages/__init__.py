@@ -39,5 +39,5 @@ def run_external_script(script: str, *args: str, logger: logging.Logger) -> list
     if script.endswith(".ps1"):
         cmd = ["powershell", "-NoProfile", *cmd]
 
-    cmd = LoggedCommand(*cmd, logger=logger).run(log_stdout=False)
+    cmd = LoggedCommand(*cmd).run(logger, log_stdout=False)
     return cmd.stdout or []

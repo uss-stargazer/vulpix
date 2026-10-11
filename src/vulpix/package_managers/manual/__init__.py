@@ -127,7 +127,7 @@ class Status:
         self._logger.info(f"activating package entry '{package}'")
         self.by_package[package] = PackageStatus(
             active=True,
-            last_active=date.today(),  # noqa: DTZ011
+            last_active=date.today(),
             binaries=bin_paths,
         )
 
@@ -313,7 +313,7 @@ def garbage_collection(logger: logging.Logger):
     """actually destroys packages that have been disabled for too long"""
     logger.info("checking for garbage packages")
 
-    cutoff_date = date.today() - timedelta(days=N_GRACE_DAYS)  # noqa: DTZ011
+    cutoff_date = date.today() - timedelta(days=N_GRACE_DAYS)
     with status_datafile as status:
         status._logger = logger
         garbage_packages = [

@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 
 from vulpix.core.tasks import ThreadedTaskQueue as Queue
+from vulpix.utils import path_as_salt
 
 
 @dataclass(frozen=True)
@@ -14,7 +15,8 @@ class ManagerTask:
 
     @property
     def name(self) -> str:
-        return (
+        # clean as it was a path since a corresponding log file will be created
+        return path_as_salt(
             f"{self.verb}[{self.package + '@' if self.package else ''}{self.manager}]"
         )
 
