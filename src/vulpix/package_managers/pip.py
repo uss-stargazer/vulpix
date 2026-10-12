@@ -57,16 +57,17 @@ def reinstall_package(package: str, logger: logging.Logger):
     pip_cmd("install", "--force-reinstall", package).run(logger)
 
 
+@tasks.task_function
+def uninstall_package(package: str, logger: logging.Logger):
+    pip_cmd("uninstall", "--yes", package).run(logger)
+
+
 task_by_verb = {
     "install": install_package,
     "update": update_package,
     "reinstall": reinstall_package,
+    "uninstall": uninstall_package,
 }
-
-
-@tasks.task_function
-def uninstall_packages(packages: list[str], logger: logging.Logger):
-    pip_cmd("uninstall", "--yes", *packages).run(logger)
 
 
 class PipManager(PackageManager):
@@ -106,15 +107,12 @@ class PipManager(PackageManager):
 
     @tasks.task_function
     def apply_changes(self, diff: PackageDiff, queue: tasks.ThreadedTaskQueue) -> None:
-        # uninstall first
-        task = ManagerTask(verb="uninstall", manager="pip")
-        task.run(queue, uninstall_packages, args=(diff.to_uninstall,))
+        tasks = [ManagerTask.uninstall(p, "pip") for p in diff.to_uninstall]
+        tasks.extend([ManagerTask.reinstall(p, "pip") for p in diff.to_reinstall])
+        tasks.extend([ManagerTask.install(p, "pip") for p in diff.to_install])
+        tasks.extend([ManagerTask.update(p, "pip") for p in diff.to_update])
 
-        tasks = [ManagerTask.reinstall(p, manager="pip") for p in diff.to_reinstall]
-        tasks.extend([ManagerTask.install(p, manager="pip") for p in diff.to_install])
-        tasks.extend([ManagerTask.update(p, manager="pip") for p in diff.to_update])
-
-        # the rest have to be run synchronously (pip, i'm disappointed in you...)
+        # tasks have to be run synchronously (pip, i'm disappointed in you...)
         for task in tasks:
             task.run(queue, task_by_verb[task.verb], args=(task.package,))
             queue.wait_for_tasks([task.name])  # wait before continuing
