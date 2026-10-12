@@ -41,10 +41,10 @@ class PackageDiff:
     def __str__(self) -> str:
         return (
             "package changes {\n"
-            f"  to_install: [{", ".join(self.to_install)}]\n"
-            f"  to_update: [{", ".join(self.to_update)}]\n"
-            f"  to_reinstall: [{", ".join(self.to_reinstall)}]\n"
-            f"  to_uninstall: [{", ".join(self.to_uninstall)}]\n"
+            f"  to_install: [{', '.join(self.to_install)}]\n"
+            f"  to_update: [{', '.join(self.to_update)}]\n"
+            f"  to_reinstall: [{', '.join(self.to_reinstall)}]\n"
+            f"  to_uninstall: [{', '.join(self.to_uninstall)}]\n"
             "}"
         )
 

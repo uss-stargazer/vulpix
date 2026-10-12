@@ -192,7 +192,10 @@ class ScriptsManager(ConfigManager):
             s
             for s in find_scripts()
             if (not s.target_os or s.target_os == system.OS)
-            and (not s.target_package or any(s.target_package == p.name for p in packages))
+            and (
+                not s.target_package
+                or any(s.target_package == p.name for p in packages)
+            )
         ]
         logger.debug(f"scripts: {scripts}")
         if len(scripts) == 0:

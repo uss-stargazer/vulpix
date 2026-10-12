@@ -90,7 +90,9 @@ the script exports a `main` function, it will also automatically be run. the mai
 accept any of the following params:
 
 ```python
-def main(config: Any, logger: logging.Logger, queue: vulpix.core.tasks.ThreadedTaskQueue):
+def main(
+    config: Any, logger: logging.Logger, queue: vulpix.core.tasks.ThreadedTaskQueue
+):
     pass
 ```
 
