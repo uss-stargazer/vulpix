@@ -32,7 +32,7 @@ class Settings:
             cpu_count = os.cpu_count()
             self.threads = cpu_count + 4 if cpu_count else 4
         if self.alt_screen is None:
-            self.alt_screens = True
+            self.alt_screen = True
         if self.abort_uninstall_threshold is None:
             self.abort_uninstall_threshold = 10
         if self.apt_mode is None:
