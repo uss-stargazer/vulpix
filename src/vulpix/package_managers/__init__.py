@@ -38,6 +38,16 @@ class PackageDiff:
     def is_empty(self) -> bool:
         return all(len(v) == 0 for v in astuple(self))
 
+    def __str__(self) -> str:
+        return (
+            "package changes {\n"
+            f"  to_install: [{", ".join(self.to_install)}]\n"
+            f"  to_update: [{", ".join(self.to_update)}]\n"
+            f"  to_reinstall: [{", ".join(self.to_reinstall)}]\n"
+            f"  to_uninstall: [{", ".join(self.to_uninstall)}]\n"
+            "}"
+        )
+
 
 class PackageManager(ABC):
     """base class that all package managers (including external plugins) must inherit from"""
