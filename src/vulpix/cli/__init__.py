@@ -21,13 +21,13 @@ def parse_args() -> Cli:
         usage="%(prog)s [OPTIONS] <COMMAND>",
     )
     parser.add_argument(
-        "-v",
+        "-V",
         "--version",
         action="version",
         version=__version__,
         help="print version tag",
     )
-    parser.add_argument("-V", "--verbose", action="store_true", help="print debug logs")
+    parser.add_argument("-v", "--verbose", action="store_true", help="print debug logs")
     parser.add_argument(
         "-w",
         "--whatif",
