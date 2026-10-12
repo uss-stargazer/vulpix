@@ -13,9 +13,7 @@ warn() { echo "WARN: $*" >&2; }
 success() { echo "SUCCESS: $*" >&2; }
 err() { echo "ERROR: $*" >&2; }
 fatal() { echo "FATAL: $*" >&2 && exit 1; }
-is_root() {
-  [[ "$EUID" -eq 0 ]]
-}
+is_root() { [[ "$EUID" -eq 0 ]]; }
 verify() {
   [[ $# -eq 1 ]]
   read -p "$1 (y/n): " -n 1 -r REPLY
@@ -54,37 +52,7 @@ command_exists git || fatal 'git not available; install using os package manager
 $PYTHON -m pip install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
 command_exists vulpix || fatal "install suppossedly succeeded, but vulpix isn't available"
 
-# step 3: init blueprint --------------------------------------------------------------------------
-
-BLUEPRINT="$VULPIX_CONFIG/blueprint.yaml"
-default_blueprint=$(cat << 'EOF'
-# vulpix blueprint for system/user
-
-# specify target packages for system (by package manager)
-packages:
-  pip:
-    - vulpix # updates vulpix itself automatically
-  # ...other package managers
-
-# specify target config for installed packages (controlled by each config manager)
-configs:
-  scripts: "Your config here!" # see `scripts` config manager docs for more info
-  # ...other config managers
-
-# misc settings (optional, see docs)
-dotfiles: ~/.dotfiles # looks for dotfiles here
-settings:
-  threads: # auto     # number of task worker threads
-  alt_screen: true    # fancy fullscreen for cli
-EOF
-)
-
-if [[ ! -f "$VULPIX_CONFIG" ]] || verify "overwrite existing blueprint with default?"; then
-  info 'setting up default blueprint'
-  echo "$default_blueprint" >"$BLUEPRINT"
-fi
-
-# step 4: first run for registering blueprint packages --------------------------------------------
+# step 3: first run for registering blueprint packages --------------------------------------------
 
 info 'running vulpix for the first time'
 vulpix sync

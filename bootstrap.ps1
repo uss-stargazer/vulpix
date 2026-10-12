@@ -58,73 +58,52 @@ function Install-ManualPackage([string]$Package) {
     exit 1
   }
 
-  # add to PATH (only for the powershell session, but that's all that's needed)
+  # add temporarily to PATH (only for the powershell session, but that's all that's needed)
   $binDirs | ForEach-Object { $env:PATH = "$installDir\$_;$env:PATH" }
   Remove-Item $tmp -Force
 }
 
-function Bootstrap-Package([string]$Package) {
-  if (-not (Test-Command $Package)) {
-    Write-Host "INFO: $Package not installed"
-    Install-ManualPackage $Package
+function Bootstrap-Packages([string[]]$Packages) {
+  $Packages = $Packages | Where-Object { -not (Test-Command $_) }
+  if ($Packages.Count -eq 0) {
+    return
+  }
 
-    if (-not (Test-Command $Package)) {
-      Write-Host "FATAL: $Package bootstrap suppossedly succeeded, but $Package isn't available"
+  $Packages | ForEach-Object {
+    Write-Host "INFO: $_ not installed"
+    Install-ManualPackage $_
+
+    if (-not (Test-Command $_)) {
+      Write-Host "FATAL: $_ bootstrap suppossedly succeeded, but $_ isn't available"
       exit 1
     }
   }
-  $bootstrappedPackages += @($Package)
+
+  # let vulpix know about bootstrapped packages with bootstrapped.json
+  # (see src/vulpix/cli/bootstrap.py)
+  @{ packages = @{ manual = @($Packages); }; } |
+    ConvertTo-Json -Depth 10 |
+    Set-Content (Join-Path $VULPIX_DATA "bootstrapped.json")
 }
 
-Bootstrap-Package 'python' # obviously required for vulpix
-Bootstrap-Package 'git' # required to `pip install git+...`
+# python is obviously required for vulpix. git is required to `pip install git+...`.
+Bootstrap-Packages 'python', 'git'
 
 # step 2: install vulpix --------------------------------------------------------------------------
 
 Write-Host "INFO: pip install vulpix"
 python -m pip install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
 
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "FATAL: install failed"
+  exit 1
+}
 if (-not (Test-Command vulpix)) {
   Write-Host "FATAL: install suppossedly succeeded, but vulpix isn't available"
   exit 1
 }
 
-# step 3: init blueprint --------------------------------------------------------------------------
-
-$BLUEPRINT = Join-Path $VULPIX_CONFIG "blueprint.yaml"
-$defaultBlueprint = @"
-# vulpix blueprint for system/user
-
-# specify target packages for system (by package manager)
-packages:
-  $(
-    if ($bootstrappedPackages.Count -gt 0) {
-      "manual: [$($bootstrappedPackages -join ", ")] # bootstrapped defaults`n"
-    }
-  )pip:
-    - vulpix # updates vulpix itself automatically
-  # ...other package managers
-
-# specify target config for installed packages (controlled by each config manager)
-configs:
-  scripts: "Your config here!" # see 'scripts' config manager docs for more info
-  # ...other config managers
-
-# misc settings (optional, see docs)
-dotfiles: ~/.dotfiles # looks for dotfiles here
-settings:
-  threads: # auto     # number of task worker threads
-  alt_screen: true    # fancy fullscreen for cli
-"@
-
-write-host $defaultBlueprint
-
-if ((-not (Test-Path $BLUEPRINT)) -or (Read-Yn "overwrite existing blueprint with default?")) {
-  Write-Host "INFO: writing default blueprint"
-  Set-Content $BLUEPRINT -Value $defaultBlueprint
-}
-
-# step 4: first run for registering blueprint packages --------------------------------------------
+# step 3: first run for registering blueprint packages --------------------------------------------
 
 Write-Host "INFO: running vulpix for the first time"
 vulpix sync

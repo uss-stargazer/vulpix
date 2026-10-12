@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from vulpix import config_managers, package_managers, utils
-from vulpix.cli import logging
+from vulpix.cli import bootstrap, logging
 from vulpix.cli.task_section import TaskSection, emotes, term
 from vulpix.core import VulpixError, blueprint, dirs, dotenv, dotfiles
 from vulpix.core.manager_tasks import (
@@ -181,15 +181,26 @@ class Cli(argparse.Namespace):
     # cli utils -----------------------------------------------------------------------------------
 
     def get_blueprint_path(self) -> Path:
-        blueprint_path = dirs.VULPIX_CONFIG / "blueprint.yaml"
+        default_blueprint_path = (
+            dirs.VULPIX_CONFIG.resolve(strict=False) / "blueprint.yaml"
+        )
+        blueprint_path = default_blueprint_path
         if self.blueprint is not None:
             blueprint_path = Path(self.blueprint)
-
         self.whatif_log(f"blueprint: {blueprint_path}")
-        if not blueprint_path.exists():
-            # TODO: ask if you wanna copy the default
-            raise VulpixError(f"expected blueprint file at '{blueprint_path}'")
 
+        # if --blueprint not passed as arg, then run bootstrap checks
+        if blueprint_path.resolve(strict=False) == default_blueprint_path:
+            self.logger.debug("running bootstrap checks")
+
+            # if the config dir isn't right, prompt to use quickstart config
+            bootstrap.run_quickstart_config_check(self.logger)
+
+            # if vulpix bootstrapped script was just run, add packages to blueprint
+            bootstrap.run_bootstrapped_packages_check(blueprint_path, self.logger)
+
+        if not blueprint_path.exists():
+            raise VulpixError(f"expected blueprint file at '{blueprint_path}'")
         return blueprint_path
 
     _cached_bp: blueprint.ExpandedBlueprint | None = None

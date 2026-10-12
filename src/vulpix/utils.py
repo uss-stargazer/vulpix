@@ -316,10 +316,12 @@ class DataclassFile[D: Dataclass](DataclassOps[D]):
     exist
     """
 
-    type HandleException = Callable[[type[Exception], Exception], bool | None]
+    type HandleException = Callable[
+        [type[Exception], Exception], Exception | bool | None
+    ]
 
     path: Path
-    lock: FileLock
+    lock: FileLock | None
 
     acquire_timeout: int = 10
     on_error: HandleException | None
@@ -331,10 +333,11 @@ class DataclassFile[D: Dataclass](DataclassOps[D]):
         on_error: HandleException | None = None,
         load_func: LoadFunction = default_load_func,
         dump_func: DumpFunction = default_dump_func,
+        lock_file: bool = True,
     ):
         super().__init__(dclass, load_func, dump_func)
         self.path = path
-        self.lock = FileLock(path.with_suffix(".lock"))
+        self.lock = FileLock(path.with_suffix(".lock")) if lock_file else None
         self.on_error = on_error
 
     def loadf(self) -> D:
@@ -342,24 +345,29 @@ class DataclassFile[D: Dataclass](DataclassOps[D]):
             exists = self.path.exists() and self.path.stat().st_size > 0
             return self.load(self.path) if exists else self.dclass_def()
         except Exception as e:
-            if self.on_error:
-                self.on_error(type(e), e)
-            raise  # raise regardless of on_error return so we don't have to return None
+            if self.on_error and isinstance(
+                (e := self.on_error(type(e), e)), Exception
+            ):
+                raise e  # noqa: TRY201
+            raise  # raise regardless of on_error saying "ignore" so we don't have to return None
 
     def dumpf(self, dclass_instance: D):
         try:
             self.dump(dclass_instance, self.path)
         except Exception as e:
-            if not self.on_error or self.on_error(type(e), e) is False:
+            if not self.on_error or (e := self.on_error(type(e), e)) is False:
                 raise
+            if e is not None and e is not True:
+                raise e  # noqa: TRY201
 
     _dclass_instance: D
 
     def __enter__(self) -> D:
-        try:
-            self.lock.acquire(timeout=self.acquire_timeout)
-        except Timeout:
-            raise VulpixError(f"couldn't aquire lock for {self.path}")
+        if self.lock:
+            try:
+                self.lock.acquire(timeout=self.acquire_timeout)
+            except Timeout:
+                raise VulpixError(f"couldn't aquire lock for {self.path}")
 
         self._dclass_instance = self.loadf()
         return self._dclass_instance
@@ -370,11 +378,9 @@ class DataclassFile[D: Dataclass](DataclassOps[D]):
                 raise exc_value
 
             self.dumpf(self._dclass_instance)
-        except Exception as e:
-            if not self.on_error or self.on_error(type(e), e) is False:
-                raise
         finally:
-            self.lock.release()
+            if self.lock:
+                self.lock.release()
 
 
 class Broadcast:
