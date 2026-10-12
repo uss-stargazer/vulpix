@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from vulpix import config_managers, package_managers, utils
-from vulpix.cli import bootstrap, logging
+from vulpix.cli import bootstrap, ensurevulpix, logging
 from vulpix.cli.task_section import TaskSection, emotes, term
 from vulpix.core import VulpixError, blueprint, dirs, dotenv, dotfiles
 from vulpix.core.manager_tasks import (
@@ -198,6 +198,9 @@ class Cli(argparse.Namespace):
 
             # if vulpix bootstrapped script was just run, add packages to blueprint
             bootstrap.run_bootstrapped_packages_check(blueprint_path, self.logger)
+
+            # ensure vulpix will be available in the future
+            ensurevulpix.ensure_vulpix(self.logger)
 
         if not blueprint_path.exists():
             raise VulpixError(f"expected blueprint file at '{blueprint_path}'")

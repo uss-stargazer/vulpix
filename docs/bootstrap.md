@@ -32,7 +32,9 @@ that can expose target scripts). to do this, this is what the bootstrap scripts 
   script), the packages are manually added to the blueprint before sync is run. this way,
   bootstrapped packages can be properly registered and installed. vulpix deletes the json after,
   it's been processed.
-- *ensures vulpix*: TODO
+- *ensures vulpix*: makes sure that the `vulpix` binary is accessible
+    - *for linux*: makes sure vulpix is symlinked to standard bin location
+    - *for windows*: adds the parent dir of vulpix.exe to PATH in environmental var registry
 
 ## quickstart config
 
