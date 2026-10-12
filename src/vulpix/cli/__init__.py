@@ -53,7 +53,11 @@ def parse_args() -> Cli:
         "sync",
         help=sync_desc,
         description=sync_desc,
-        epilog="if no [opts] are supplied, runs with `--clean --apply --config`.",
+        epilog="package managers are appended to package names before checking against regex like "
+        "`{name}@{manager}`. for example, regex of `.*@pip` would limit scope to the 'pip' manager."
+        "\n\n"
+        "if no [opts] are supplied, runs with `--clean --apply --config`.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sync_parser.add_argument(
         "-a",
@@ -119,7 +123,8 @@ def parse_args() -> Cli:
         "dotenv",
         help=dotenv_desc,
         description='use like `eval "$(vulpix dotenv sh)"` or '
-        "`vulpix dotenv pwsh | Invoke-Expression` in your profile.\n\n"
+        "`vulpix dotenv pwsh | Invoke-Expression` in your profile."
+        "\n\n"
         "do not specify <shell> to open dotenv json in $VISUAL/$EDITOR.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

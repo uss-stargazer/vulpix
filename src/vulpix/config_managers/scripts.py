@@ -50,7 +50,7 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
-from vulpix.config_managers import ConfigManager, ManagerTask
+from vulpix.config_managers import ConfigManager, ManagerTask, Package
 from vulpix.core import VulpixError, dirs, logging, system
 from vulpix.core.tasks import ThreadedTaskQueue, task_function
 from vulpix.utils import LoggedCommand, accepts_kwarg, is_executable, path_as_salt
@@ -184,7 +184,7 @@ class ScriptsManager(ConfigManager):
     def apply_config(
         self,
         config: Any,
-        packages: list[str],
+        packages: list[Package],
         logger: logging.Logger,
         queue: ThreadedTaskQueue,
     ) -> None:
@@ -192,7 +192,7 @@ class ScriptsManager(ConfigManager):
             s
             for s in find_scripts()
             if (not s.target_os or s.target_os == system.OS)
-            and (not s.target_package or s.target_package in packages)
+            and (not s.target_package or any(s.target_package == p.name for p in packages))
         ]
         logger.debug(f"scripts: {scripts}")
         if len(scripts) == 0:

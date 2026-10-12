@@ -32,12 +32,13 @@ class ConfigManager(ABC):
 
     @abstractmethod
     @task_function
-    def apply_config(self, config: Any, packages: list[str], **_) -> None:
+    def apply_config(self, config: Any, packages: list[Package], **_) -> None:
         """
         applies configuration for the specified packages, based on `config` which is the object from
-        `config.{manager_name}` section of the user's blueprint (parsed into a dictionary). the
-        `packages` array shows the intersection of packages in the blueprint and successfully
-        installed/updated/reinstalled packages from package management (if it was run).
+        `config.{manager_name}` section of the user's blueprint (it gets parsed into string, bool,
+        dict, list, etc). the `packages` array shows the intersection of packages in the blueprint
+        and successfully installed/updated/reinstalled packages from package management (if it was
+        run).
 
         this must be a task_function; it should use the `logger` kwarg for logging, and it has
         the option to spawn more tasks with the `queue` kwarg (like `queue.run_task(...)`).

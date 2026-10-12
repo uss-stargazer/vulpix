@@ -5,6 +5,7 @@ an entry point group.
 
 import pkgutil
 from abc import ABC
+from dataclasses import dataclass
 from importlib.metadata import entry_points
 from types import ModuleType
 
@@ -18,6 +19,22 @@ class ManagerUnsupported(Exception):
     def __init__(self, manager: str, message: str):
         self.manager = manager
         self.message = message
+
+
+@dataclass(frozen=True)
+class Package:
+    """
+    represents a package in generally. this is typically used from the config manager's perspective
+    because a package is inheritly tied to a package manager, so the config manager needs to know
+    not only the package name but also the package manager, whereas the package manager only needs
+    to know the package name.
+    """
+
+    name: str
+    package_manager: str
+
+    def __repr__(self) -> str:
+        return f"{self.name}@{self.package_manager}"
 
 
 def _get_namespace_modules(namespace_pkg: ModuleType) -> dict[str, str]:

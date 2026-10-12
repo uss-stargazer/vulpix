@@ -14,24 +14,37 @@ from vulpix.core.manager_tasks import (
     TaskStatusDict,
     completed_package_tasks,
 )
+from vulpix.core.managers import Package
 
 failure_s, success_s = term.red("failure"), term.green("success")
+
+
+type PackageDiffFilter = Callable[
+    [str, package_managers.PackageDiff], package_managers.PackageDiff
+]
+type ConfigPackageFilter = Callable[[list[Package]], list[Package]]
+
+
+def check_package(package: Package, regex: re.Pattern[str]) -> bool:
+    return regex.search(str(package)) is not None
 
 
 def build_package_filter(
     apply: re.Pattern[str] | None,
     clean: re.Pattern[str] | None,
     reinstall: re.Pattern[str] | None,
-) -> Callable:
+) -> PackageDiffFilter:
     def _filter(
         manager: str, changes: package_managers.PackageDiff
     ) -> package_managers.PackageDiff:
         def filter_packages(
-            packages: list[str], regex: re.Pattern[str], negate=False
+            packages: list[str], regex: re.Pattern[str], negate: bool = False
         ) -> list[str]:
             if negate:
-                return [p for p in packages if not regex.search(f"{p}@{manager}")]
-            return [p for p in packages if regex.search(f"{p}@{manager}")]
+                return [
+                    p for p in packages if not check_package(Package(p, manager), regex)
+                ]
+            return [p for p in packages if check_package(Package(p, manager), regex)]
 
         # reinstall takes precedent (this is also different since we are telling it to reinstall
         # instead of install/update, rather than just filtering)
@@ -64,34 +77,30 @@ def build_package_filter(
     return _filter
 
 
-def get_status_by_package(tasks: TaskStatusDict) -> dict[str, bool]:
-    """
-    reduces status by task to status by package (requiring all package tasks to be successful for
-    the package to be successful
-    """
-    status_by_package: dict[str, bool] = {}
-    for task, success in tasks.items():
-        status = status_by_package.get(task.package, True)
-        status_by_package[task.package] = status and success
-    return status_by_package
-
-
 def build_config_filter(
-    package_pattern: re.Pattern[str], package_tasks: TaskStatusDict | None
-) -> Callable:
-    def _filter(packages: list[str]) -> list[str]:
-        packages = [p for p in packages if package_pattern.search(p)]
-        if package_tasks:
-            status_by_package = get_status_by_package(package_tasks)
-            packages = [
-                p
-                for p in packages
-                if p in status_by_package and status_by_package[p] is True
-            ]
+    package_pattern: re.Pattern[str], package_management_tasks: TaskStatusDict | None
+) -> ConfigPackageFilter:
+    def _filter(packages: list[Package]) -> list[Package]:
+        if package_management_tasks:
+            package_tasks = {
+                Package(t.package, t.manager): status
+                for t, status in package_management_tasks.items()
+                if t.package
+            }
+            packages = [p for p in packages if package_tasks.get(p)]
 
-        return packages
+        return [p for p in packages if check_package(p, package_pattern)]
 
     return _filter
+
+
+def flatten_packages_by_manager(
+    pbm: dict[str, list[str]],
+) -> list[Package]:
+    flattened: list[Package] = []
+    for manager, packages in pbm.items():
+        flattened.extend([Package(p, manager) for p in packages])
+    return flattened
 
 
 def task_summary(tasks: TaskStatusDict) -> str:
@@ -203,7 +212,7 @@ class Cli(argparse.Namespace):
         else:
             self.logger.debug(log)
 
-    def package_manage_section(self, package_filter: Callable) -> TaskStatusDict:
+    def package_manage_section(self, diff_filter: PackageDiffFilter) -> TaskStatusDict:
         bp = self.get_expanded_blueprint()
         if len(bp.packages) == 0:
             self.logger.warning(
@@ -218,7 +227,7 @@ class Cli(argparse.Namespace):
             diff.remove_dups()
             self.logger.debug(f"(og) {manager_id}: {diff}")
 
-            diff = package_filter(manager_id, diff)
+            diff = diff_filter(manager_id, diff)
             self.whatif_log(f"{manager_id}: {diff}")
             if diff.is_empty():
                 self.logger.warning(
@@ -255,7 +264,9 @@ class Cli(argparse.Namespace):
 
         return completed_package_tasks(section.completed_tasks)
 
-    def package_config_section(self, config_filter: Callable) -> TaskStatusDict:
+    def package_config_section(
+        self, package_filter: ConfigPackageFilter
+    ) -> TaskStatusDict:
         bp = self.get_expanded_blueprint()
         if len(bp.configs) == 0:
             self.logger.warning(
@@ -263,15 +274,10 @@ class Cli(argparse.Namespace):
             )
             return {}
 
-        # config managers shouldn't care about package managers, so we just get a list of the package
-        # names and give it to the config managers as a hint of what to config.
-        packages = [
-            p for manager_packages in bp.packages.values() for p in manager_packages
-        ]
-        packages = list(set(packages))
+        # we give packages to the config managers as a hint of what to config
+        packages = list(set(flatten_packages_by_manager(bp.packages)))
         self.logger.debug(f"(og) config packages: {packages}")
-
-        packages = config_filter(packages)
+        packages = package_filter(packages)
         self.whatif_log(f"config packages: {packages}")
         self.whatif_log(f"config managers: {list(bp.configs.keys())}")
         if len(packages) == 0:
@@ -279,7 +285,6 @@ class Cli(argparse.Namespace):
                 "no packages are visible to config (hidden by filtering or failure); running config anyways"
             )
 
-        # actually run it
         if self.whatif:
             return {}
 
@@ -310,9 +315,8 @@ class Cli(argparse.Namespace):
             package_filter = build_package_filter(
                 self.apply, self.clean, self.reinstall
             )
-            package_tasks = self.package_manage_section(package_filter)
-            print_section_summary(package_tasks, self.logger)
-            tasks = package_tasks
+            tasks = self.package_manage_section(package_filter)
+            print_section_summary(tasks, self.logger)
 
         if self.config is not None:
             config_filter = build_config_filter(self.config, tasks)
@@ -476,5 +480,5 @@ class Cli(argparse.Namespace):
             self.logger.warning(f"see error details at '{dirs.VULPIX_LOG}'")
             self.logger.critical("an unexpected, uncaught error occured")
             return 1
-        
+
         return 0
