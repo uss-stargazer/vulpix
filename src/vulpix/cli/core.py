@@ -30,8 +30,8 @@ def build_package_filter(
             packages: list[str], regex: re.Pattern[str], negate=False
         ) -> list[str]:
             if negate:
-                return [p for p in packages if not regex.match(f"{p}@{manager}")]
-            return [p for p in packages if regex.match(f"{p}@{manager}")]
+                return [p for p in packages if not regex.search(f"{p}@{manager}")]
+            return [p for p in packages if regex.search(f"{p}@{manager}")]
 
         # reinstall takes precedent (this is also different since we are telling it to reinstall
         # instead of install/update, rather than just filtering)
@@ -80,7 +80,7 @@ def build_config_filter(
     package_pattern: re.Pattern[str], package_tasks: TaskStatusDict | None
 ) -> Callable:
     def _filter(packages: list[str]) -> list[str]:
-        packages = [p for p in packages if package_pattern.match(p)]
+        packages = [p for p in packages if package_pattern.search(p)]
         if package_tasks:
             status_by_package = get_status_by_package(package_tasks)
             packages = [
