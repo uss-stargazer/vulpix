@@ -2,7 +2,7 @@ import argparse
 import re
 
 from vulpix import __version__
-from vulpix.cli import core
+from vulpix.cli.core import Cli
 from vulpix.cli.task_section import emotes
 
 
@@ -13,7 +13,7 @@ def regex_arg(arg: str) -> re.Pattern[str]:
         raise argparse.ArgumentTypeError(f"'{arg}' is not a valid regular expression.")
 
 
-def parse_cli() -> core.Cli:
+def parse_args() -> Cli:
     parser = argparse.ArgumentParser(
         prog="vulpix",
         description="blueprint-driven system management/configuration tool "
@@ -145,7 +145,7 @@ def parse_cli() -> core.Cli:
     )
 
     # actaually parse it! -----------------------------------------
-    cli = core.Cli()
+    cli = Cli()
     parser.parse_args(namespace=cli)
     if not cli.command:
         parser.exit(status=1, message=parser.format_help())
@@ -159,3 +159,8 @@ def parse_cli() -> core.Cli:
         cli.config = re.compile(".*")
 
     return cli
+
+
+def main() -> int:
+    cli = parse_args()
+    return cli.main()

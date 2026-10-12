@@ -439,7 +439,7 @@ class Cli(argparse.Namespace):
             log_name = utils.prompt_choice("select log", log_names, choices)
 
         if not self.verbose:
-            self.logger.info("use --verbose to see debug logs")
+            self.logger.warning("use --verbose to see debug logs")
         self.logger.info(f"replaying '{log_name}' log:\n")
         logging.console_log_to(sys.stdout, self.logger)  # temp log to stdout
         logging.replay_log_file(log_name, self.logger)
@@ -447,19 +447,34 @@ class Cli(argparse.Namespace):
 
     # main ----------------------------------------------------------------------------------------
 
-    def main(self):
+    def main(self) -> int:
+        self.init_console_logging()
         self.logger.debug(str(self))
-        match self.command:
-            case "sync":
-                command = self.sync_command
-            case "dotfiles":
-                command = self.dotfiles_command
-            case "blueprint":
-                command = self.blueprint_command
-            case "dotenv":
-                command = self.dotenv_command
-            case "replay":
-                command = self.replay_command
-            case _:
-                raise VulpixError("invalid command")
-        command()
+
+        # intercept all errors so the terminal doesn't get cluttered (unless verbose)
+        try:
+            match self.command:
+                case "sync":
+                    command = self.sync_command
+                case "dotfiles":
+                    command = self.dotfiles_command
+                case "blueprint":
+                    command = self.blueprint_command
+                case "dotenv":
+                    command = self.dotenv_command
+                case "replay":
+                    command = self.replay_command
+                case _:
+                    raise VulpixError("invalid command")
+
+            command()
+        except VulpixError as e:
+            self.logger.critical(e.message)
+            return e.exit_status
+        except Exception:
+            self.logger.debug("exception raised", exc_info=True)
+            self.logger.warning(f"see error details at '{dirs.VULPIX_LOG}'")
+            self.logger.critical("an unexpected, uncaught error occured")
+            return 1
+        
+        return 0
