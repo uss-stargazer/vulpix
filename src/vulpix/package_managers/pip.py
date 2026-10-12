@@ -10,14 +10,14 @@ context of vulpix because just one offending package in the blueprint would scre
 
 import sys
 
-from vulpix.core import logging, tasks
+from vulpix.core import VulpixError, logging, tasks
 from vulpix.package_managers import (
     InvalidPackage,
     ManagerTask,
     PackageDiff,
     PackageManager,
 )
-from vulpix.utils import LoggedCommand
+from vulpix.utils import LoggedCommand, in_virtual_env
 
 
 def pip_cmd(*args: str) -> LoggedCommand:
@@ -75,6 +75,10 @@ class PipManager(PackageManager):
 
     def __init__(self):
         self.main_logger = logging.getLogger("main")
+
+        # since this is meant to work as a system package manager, no venvs
+        if in_virtual_env():
+            raise VulpixError("cannot use 'pip' manager in virtual env")
 
         # make sure pip is installed
         pip_cmd("--version").run(self.main_logger, log_stdout=False)
