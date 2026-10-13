@@ -12,31 +12,6 @@ if (Test-Path $InstallDir -PathType Leaf) {
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$GitConfigInf = @"
-[Setup]
-Lang=default
-Group=Git
-NoIcons=0
-SetupType=default
-Components=gitlfs,assoc,assoc_sh,windowsterminal,scalar
-Tasks=
-EditorOption=VIM
-CustomEditorPath=
-DefaultBranchOption=main
-PathOption=CmdTools
-SSHOption=OpenSSH
-TortoiseOption=false
-CURLOption=WinSSL
-CRLFOption=LFOnly
-BashTerminalOption=MinTTY
-GitPullBehaviorOption=Rebase
-UseCredentialManager=Enabled
-PerformanceTweaksFSCache=Enabled
-EnableSymlinks=Enabled
-EnablePseudoConsoleSupport=Disabled
-EnableFSMonitor=Disabled
-"@
-
 function Test-Url([string]$Url) {
     try {
         $response = Invoke-WebRequest -Uri $Url -Method Head -UseBasicParsing -ErrorAction Stop
@@ -55,7 +30,7 @@ function Get-VersionTag() {
 }
 
 function Get-InstalledVersion() {
-  $git = "$InstallDir/bin/git.exe"
+  $git = "$InstallDir/cmd/git.exe"
   if (Test-Path $git) {
     $currentVersion = & $git --version
     if ($currentVersion -match ".*(\d+\.\d+\.\d+)(\.windows)?(\.\d+)?.*") {
@@ -73,13 +48,18 @@ function Get-InstalledVersion() {
 
 function Get-DownloadUrl($Version) {
   $arch = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
+  if ($arch -like '*arm*') {
+    $arch = "arm64"
+  }
+
   if ($Version -match "^v(\d+\.\d+\.\d+)\.windows(\.\d+)?$") {
     $possibleVersionNumbers = @($Matches[1])
     if ($Matches.Count -gt 2) {
       $possibleVersionNumbers += @("$($Matches[1])$($Matches[2])")
     }
     foreach ($versionNumber in $possibleVersionNumbers) {
-      $url = "https://github.com/git-for-windows/git/releases/download/$Version/Git-$versionNumber-$arch.exe"
+
+      $url = "https://github.com/git-for-windows/git/releases/download/$Version/MinGit-$versionNumber-$arch.zip"
       if (Test-Url $url) {
         return $url
       }
@@ -113,39 +93,27 @@ if ($Update) {
 }
 
 if ($Install) {
+  $tmpInstallDir = "$InstallDir.tmp"
   $url = Get-DownloadUrl $LatestVersion
   [Console]::Error.WriteLine("DEBUG: url=$url")
 
   [Console]::Error.WriteLine('INFO: downloading')
   $tmp = New-TemporaryFile
-  Move-Item $tmp "$tmp.exe"
-  $tmp = "$tmp.exe"
+  Move-Item $tmp "$tmp.zip"
+  $tmp = "$tmp.zip"
   Invoke-WebRequest -UseBasicParsing -OutFile "$tmp" "$url"
 
-  New-Item $installDir -Type Directory -Force | Out-Null
-  $configFile = New-TemporaryFile
-  Set-Content -Value $GitConfigInf -Path "$configFile"
+  [Console]::Error.WriteLine('INFO: extracting')
+  New-Item $tmpInstallDir -Type Directory -Force -ErrorAction SilentlyContinue | Out-Null
+  Add-Type -Assembly "System.IO.Compression.Filesystem"
+  [System.IO.Compression.ZipFile]::ExtractToDirectory($tmp, $tmpInstallDir)
 
-  [Console]::Error.WriteLine('INFO: installing')
-  Start-Process -Wait -FilePath "$tmp" -ArgumentList @(
-    '/SILENT',
-    '/NORESTART', 
-    '/CURRENTUSER',
-    "/DIR=`"$installDir`"",
-    "/LOADINF=`"$configFile`""
-    '/COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"'
-  )
-  $status = $?
-
-  Remove-Item "$configFile" -Force
   Remove-Item "$tmp" -Force
-
-  if (-not $status) {
-    exit $status
-  }
+  Remove-Item $InstallDir -Force -Recurse -ErrorAction SilentlyContinue
+  Move-Item -Path $tmpInstallDir -Destination $InstallDir
 }
 
-$binaryDirectories = @("bin", "usr\bin")
+$binaryDirectories = @("cmd", "ucrt64\bin", "usr\bin")
 if ((Test-Path ($binaryDirectories | ForEach-Object { "$InstallDir\$_" })) -contains $false) {
   [Console]::Error.WriteLine('WARN: not all expected binary dirs exist')
 }
