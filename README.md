@@ -58,70 +58,32 @@ windows has its own bootstrap script:
 
     options:
       -h, --help            show this help message and exit
-      -v, --version         print version tag
-      -V, --verbose         print debug logs
+      -V, --version         print version tag
+      -v, --verbose         print debug logs
       -w, --whatif          show what would happen without doing anything
       -b, --blueprint PATH  specify blueprint.yaml path, otherwise searches default locations
       --no-fullscreen       no fullscreen/alt screen
 
-and for each subcommand:
+of particular not is the sync subcommand:
 
     usage: vulpix sync [-h] [-a [REGEX]] [-x [REGEX]] [-r REGEX] [-c [REGEX]]
 
-        syncs system/user with the blueprint
+    syncs system/user with the blueprint
 
-        options:
-          -h, --help            show this help message and exit
-          -a, --apply [REGEX]   if any packages are in the blueprint but are not installed, they will be installed. if any blueprint packages are already installed, they
-                                will be updated.
-          -x, --clean [REGEX]   if any packages are installed but are not a package specified in blueprint they will be uninstalled.
-          -r, --reinstall REGEX
-                                uninstalls then reinstalls matching packages
-          -c, --config [REGEX]  runs config managers for the specified packages (or all if no regex). if any other operations are run, only packages corresponding to
-                                successful tasks will be run (if at least one task that references a package fails, its config will not be run).
+    options:
+      -h, --help            show this help message and exit
+      -a, --apply [REGEX]   if any packages are in the blueprint but are not installed, they will be
+                            installed. if any blueprint packages are already installed, they will be
+                            updated.
+      -x, --clean [REGEX]   if any packages are installed but are not a package specified in
+                            blueprint they will be uninstalled.
+      -r, --reinstall REGEX uninstalls then reinstalls matching packages
+      -c, --config [REGEX]  runs config managers for the specified packages (or all if no regex).
+                            if any other operations are run, only packages corresponding to
+                            successful tasks will be run (if at least one task that references a
+                            package fails, its config will not be run).
 
-        if no [opts] are supplied, runs with `--clean --apply --config`.
+    package managers are appended to package names before checking against regex like 
+    {name}@{manager}. for example, regex of .*@pip would limit scope to the 'pip' manager.
 
-
-    usage: vulpix dotfiles [-h] [path]
-
-        symlinks dotfiles to system locations
-
-        positional arguments:
-          path        if not supplied, uses the path in the blueprint
-
-        options:
-          -h, --help  show this help message and exit
-
-
-    usage: vulpix blueprint [-h]
-
-        open blueprint in $VISUAL/$EDITOR
-
-        options:
-          -h, --help  show this help message and exit
-
-    
-    usage: vulpix dotenv [-h] [{sh,pwsh}]
-
-        use like `eval "$(vulpix dotenv sh)"` or `vulpix dotenv pwsh | Invoke-Expression` in your profile.
-
-        do not specify <shell> to open dotenv json in $VISUAL/$EDITOR.
-
-        positional arguments:
-          {sh,pwsh}
-
-        options:
-          -h, --help  show this help message and exit
-
-
-    usage: vulpix replay [-h] [-l] [REGEX]
-
-        replay a log file prompts if multiple matches
-
-        positional arguments:
-          REGEX       filter log files
-
-        options:
-          -h, --help  show this help message and exit
-          -l, --list  list available logs
+    if no [opts] are supplied, runs with --clean --apply --config.
