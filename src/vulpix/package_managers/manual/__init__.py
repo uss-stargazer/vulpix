@@ -205,8 +205,7 @@ class Status:
         bin_dirs = [str(b) for b in bin_dirs]
         with dotenv.datafile as env:
             for b in bin_dirs:
-                if not b in env.PATH:
-                    env.PATH.append(b)
+                env.prepend_path(b)
 
     def deactivate_package_binaries(self, package: str):
         """remove symlink binaries (if necessary) and remove path(s) in dotenv PATH"""

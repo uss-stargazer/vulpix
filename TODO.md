@@ -50,4 +50,3 @@
 - shell completion for subcommands, packages, etc
 - publish to pypi
 - have field in blueprint for required plugin packages?
-- give PATH its own field in dotenv so it can append each path only if not already exists

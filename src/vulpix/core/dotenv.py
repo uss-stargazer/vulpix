@@ -31,48 +31,76 @@ class Dotenv:
     # when sourced, appends to existing env vars
     append_env: dict[str, str | list[str]] = field(default_factory=dict)
 
-    @property
-    def PATH(self) -> list[str]:
-        path_value = self.append_env.setdefault("PATH", [])
-        if not isinstance(path_value, list):
-            raise TypeError("expected PATH to be list")
-        return path_value
+    PATH: list[str] = field(default_factory=list)
 
-    @PATH.setter
-    def PATH(self, new: list[str]):
-        self.append_env["PATH"] = new
+    def prepend_path(self, path: str):
+        if path not in self.PATH:
+            self.PATH.insert(0, path)
 
     # script language conversion ------------------------------------------------------------------
 
     def as_sh(self, list_sep: str = ":") -> str:
-        env = [
+        # env
+        lines = [
             f'export {name}="{list_sep.join(val)}"'
             if isinstance(val, list)
             else f'export {name}="{val}"'
             for name, val in self.env.items()
         ]
-        append_env = [
+
+        # append_env
+        lines.extend([
             f'export {name}="${name}{list_sep}{list_sep.join(val)}"'
             if isinstance(val, list)
             else f'export {name}="{val}"'
             for name, val in self.append_env.items()
-        ]
-        return "\n".join([*env, *append_env])
+        ])
+
+        # PATH
+        if self.PATH:
+            self.PATH = list(dict.fromkeys(self.PATH))
+            sh_path_arr = " ".join([f'"{p}"' for p in self.PATH])
+            lines.extend([
+                f"printf {sh_path_arr} | while IFS= read -r p; do",
+                '  case ":$PATH:" in',
+                '  *":$p:"*) ;;',
+                '  *) PATH="$p${PATH:+:$PATH}" ;;',
+                '  esac',
+                'done',
+                'export PATH',
+            ])
+
+        return "\n".join(lines)
 
     def as_pwsh(self, list_sep: str = _default_pwsh_list_sep) -> str:
-        env = [
+        # env
+        lines = [
             f'$env:{name} = "{list_sep.join(val)}"'
             if isinstance(val, list)
             else f'$env:{name} = "{val}"'
             for name, val in self.env.items()
         ]
-        append_env = [
+
+        # append_env
+        lines.extend([
             f'$env:{name} += "{list_sep}{list_sep.join(val)}"'
             if isinstance(val, list)
             else f'$env:{name} += "{val}"'
             for name, val in self.append_env.items()
-        ]
-        return "\n".join([*env, *append_env])
+        ])
+
+        # PATH
+        if self.PATH:
+            self.PATH = list(dict.fromkeys(self.PATH))
+            ps_arr = ", ".join([f"'{p}'" for p in self.PATH])
+            lines.extend([
+                '$_paths = $env:PATH -split ";"',
+                "$_paths = @(@(@(" + ps_arr + ') | where { $_ -notin $_paths }) + $_paths)',
+                '$env:PATH = $_paths -join ";"',
+                'Remove-Variable -Name "_paths"'
+            ])
+
+        return "\n".join(lines)
 
 
 path = dirs.VULPIX_CONFIG / ".env.json"
