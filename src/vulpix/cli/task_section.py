@@ -69,7 +69,7 @@ class TaskSection(ThreadedTaskQueue):
         task_name = term.cyan(task_name)
         self.logger.debug(f"new task logger (verbose={self.verbose_loggers})")
         logging.attach_console_logging(
-            logger, verbose=self.verbose_loggers, prefix=("\t", f" {task_name}>")
+            logger, verbose=self.verbose_loggers, prefix=f"      {task_name}>"
         )
         return logger
 

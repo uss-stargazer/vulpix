@@ -31,11 +31,9 @@ class ColoredLogFormatter(Formatter):
         return super().format(record)
 
 
-def attach_console_logging(
-    logger: Logger, verbose: bool, prefix: tuple[str, str] = ("", "")
-):
+def attach_console_logging(logger: Logger, verbose: bool, prefix: str = ""):
     handler = StreamHandler(sys.stderr)
-    formatter = ColoredLogFormatter(f"{prefix[0]}%(levelname)s>{prefix[1]} %(message)s")
+    formatter = ColoredLogFormatter(f"{prefix}%(levelname)s> %(message)s")
     handler.setFormatter(formatter)
     handler.setLevel(DEBUG if verbose else INFO)
     handler.lock = term_lock  # pyright: ignore # needs to be an RLock, idk why it wants Lock...
