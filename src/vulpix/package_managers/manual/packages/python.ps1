@@ -102,8 +102,22 @@ if ($Install) {
 }
 
 $binDirs = ".", "Scripts"
-
 if ((Test-Path ($binDirs | ForEach-Object { "$InstallDir\$_" })) -contains $false) {
   [Console]::Error.WriteLine('WARN: not all expected binary dirs exist')
 }
-[Console]::Out.WriteLine(($binDirs -join "`n"))
+
+$python = Join-Path $InstallDir $binary
+if (-not (Test-Path $python)) {
+  [Console]::Error.WriteLine("FATAL: installed by python.exe doesn't exist")
+  exit 1
+}
+
+# pip cli binary sometimes isn't made availeble, need to reinstall to add it to Scripts dir
+$pip = Join-Path $InstallDir "Scripts\pip.exe"
+if (-not (Test-Path $pip)) {
+  [Console]::Error.WriteLine('WARN: reinstalling pip to expose binary')
+  & $python -m pip install --upgrade --force-reinstall pip |
+    ForEach-Object { [Console]::Error.WriteLine($_) } # writes to stdout not allowed
+}
+
+[Console]::Out.WriteLine(($binDirs -join "`n")) # return bin dirs

@@ -49,26 +49,30 @@ class Dotenv:
         ]
 
         # append_env
-        lines.extend([
-            f'export {name}="${name}{list_sep}{list_sep.join(val)}"'
-            if isinstance(val, list)
-            else f'export {name}="{val}"'
-            for name, val in self.append_env.items()
-        ])
+        lines.extend(
+            [
+                f'export {name}="${name}{list_sep}{list_sep.join(val)}"'
+                if isinstance(val, list)
+                else f'export {name}="{val}"'
+                for name, val in self.append_env.items()
+            ]
+        )
 
         # PATH
         if self.PATH:
             self.PATH = list(dict.fromkeys(self.PATH))
             sh_path_arr = " ".join([f'"{p}"' for p in self.PATH])
-            lines.extend([
-                f"printf {sh_path_arr} | while IFS= read -r p; do",
-                '  case ":$PATH:" in',
-                '  *":$p:"*) ;;',
-                '  *) PATH="$p${PATH:+:$PATH}" ;;',
-                '  esac',
-                'done',
-                'export PATH',
-            ])
+            lines.extend(
+                [
+                    f"printf {sh_path_arr} | while IFS= read -r p; do",
+                    '  case ":$PATH:" in',
+                    '  *":$p:"*) ;;',
+                    '  *) PATH="$p${PATH:+:$PATH}" ;;',
+                    "  esac",
+                    "done",
+                    "export PATH",
+                ]
+            )
 
         return "\n".join(lines)
 
@@ -82,23 +86,29 @@ class Dotenv:
         ]
 
         # append_env
-        lines.extend([
-            f'$env:{name} += "{list_sep}{list_sep.join(val)}"'
-            if isinstance(val, list)
-            else f'$env:{name} += "{val}"'
-            for name, val in self.append_env.items()
-        ])
+        lines.extend(
+            [
+                f'$env:{name} += "{list_sep}{list_sep.join(val)}"'
+                if isinstance(val, list)
+                else f'$env:{name} += "{val}"'
+                for name, val in self.append_env.items()
+            ]
+        )
 
         # PATH
         if self.PATH:
             self.PATH = list(dict.fromkeys(self.PATH))
             ps_arr = ", ".join([f"'{p}'" for p in self.PATH])
-            lines.extend([
-                '$_paths = $env:PATH -split ";"',
-                "$_paths = @(@(@(" + ps_arr + ') | where { $_ -notin $_paths }) + $_paths)',
-                '$env:PATH = $_paths -join ";"',
-                'Remove-Variable -Name "_paths"'
-            ])
+            lines.extend(
+                [
+                    '$_paths = $env:PATH -split ";"',
+                    "$_paths = @(@(@("
+                    + ps_arr
+                    + ") | where { $_ -notin $_paths }) + $_paths)",
+                    '$env:PATH = $_paths -join ";"',
+                    'Remove-Variable -Name "_paths"',
+                ]
+            )
 
         return "\n".join(lines)
 
