@@ -20,7 +20,7 @@ profiles_by_shell: dict[str, list[Path]] = {
     ],
     "pwsh": [dirs.config("powershell") / "Microsoft.PowerShell_profile.ps1"],
 }
-if system.OS == "window":
+if system.OS == "windows":
     windows_profiles = [
         Path.home() / "Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
         Path.home() / "Documents/PowerShell/Microsoft.PowerShell_profile.ps1",
@@ -55,6 +55,6 @@ def main(logger: logging.Logger):
             raise VulpixError("you should source the dotenv! (see `vulpix dotenv -h`)")
 
     if found_profiles:
-        logger.info("dotenv sourced in profile(s)!")
+        logger.info("success: dotenv sourced in profile(s)")
     else:
         logger.info("no script profiles found")
