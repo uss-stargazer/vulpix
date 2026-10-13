@@ -8,6 +8,7 @@ missing/failed packages (causing the whole operation to be aborted, which is not
 context of vulpix because just one offending package in the blueprint would screw it all up).
 """
 
+import os
 import sys
 
 from vulpix.core import VulpixError, logging, tasks
@@ -77,7 +78,7 @@ class PipManager(PackageManager):
         self.main_logger = logging.getLogger("main")
 
         # since this is meant to work as a system package manager, no venvs
-        if in_virtual_env():
+        if in_virtual_env() and not os.getenv("VULPIX_IGNORE_VENV"):
             raise VulpixError("cannot use 'pip' manager in virtual env")
 
         # make sure pip is installed
