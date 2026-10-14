@@ -10,6 +10,7 @@ context of vulpix because just one offending package in the blueprint would scre
 
 import os
 import sys
+from subprocess import CalledProcessError
 
 from vulpix.core import VulpixError, logging, tasks
 from vulpix.package_managers import (
@@ -82,7 +83,10 @@ class PipManager(PackageManager):
             raise VulpixError("cannot use 'pip' manager in virtual env")
 
         # make sure pip is installed
-        pip_cmd("--version").run(self.main_logger, log_stdout=False)
+        try:
+            pip_cmd("--version").run(self.main_logger, log_stdout=False)
+        except CalledProcessError:
+            raise VulpixError("pip module is required for 'pip' package manager")
 
     def check_packages(self, packages: list[str]) -> None:
         # super simple check; this way it accepts package names, version modifers, git repos, etc.
