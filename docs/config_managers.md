@@ -13,7 +13,7 @@ create the scripts.
 
 ### script discovery
 
-scripts are stored in `$VULPIX_CONFIG/scripts` (see [vulpix dirs](docs/directories.md#config)) the
+scripts are stored in `$VULPIX_CONFIG/scripts` (see [vulpix dirs](directories.md#config)) the
 script dir should be formatted like:
 
 ```
@@ -103,7 +103,7 @@ python scripts can access any utils of the `vulpix` package (`vulpix.utils`, `vu
 
 ## create your own
 
-see [custom managers docs](docs/managers.md#custom-managers).
+see [custom managers docs](managers.md#custom-managers).
 
 your Python module must export a `package_manager_class` variable that contains a subclass of
 [`ConfigManager`](../src/vulpix/config_managers/__init__.py).

@@ -25,7 +25,7 @@ that can expose target scripts). to do this, this is what the bootstrap scripts 
    for this purpose, two things happen every time vulpix is run:
 
 - *checks `$VULPIX_CONFIG` dir*: if a blueprint does not exist in
-  [`$VULPIX_CONFIG`](docs/directories.md#config), the [quickstart blueprint](#quickstart-config)
+  [`$VULPIX_CONFIG`](directories.md#config), the [quickstart blueprint](#quickstart-config)
   is copied to it. if `$VULPIX_CONFIG` doesn't exist or is emtpy, the rest of the
   [quickstart config](#quickstart-config) is copied there.
 - *checks `$VULPIX_DATA/bootstrapped.json`*: if this file exists (presumably created by the bootstrap

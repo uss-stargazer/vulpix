@@ -1,7 +1,7 @@
 # blueprint
 
 the blueprint is the primary source of truth that acts as a "blueprint" for your system/user. it is
-a yaml file (`blueprint.yaml`) located in the [config directory](docs/directories.md#config). it contains
+a yaml file (`blueprint.yaml`) located in the [config directory](directories.md#config). it contains
 the following information:
 
 - target packages
