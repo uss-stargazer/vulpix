@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 
 $VULPIX_REPO = 'uss-stargazer/vulpix'
-$VULPIX_BRANCH = 'refactor/python-rewrite'
+$VULPIX_BRANCH = 'main'
 $VULPIX_REPO_GIT = "https://github.com/$VULPIX_REPO"
 $VULPIX_REPO_RAW = "https://raw.githubusercontent.com/$VULPIX_REPO/$VULPIX_BRANCH"
 

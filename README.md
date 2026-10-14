@@ -32,15 +32,27 @@ check out the [docs](docs/)!
 
 if you already have python installed, just:
 
-    pip install vulpix
+    pip install git+https://github.com/uss-stargazer/vulpix
 
-or if not, you can run the bootstrap script, which installs python, then `pip install`s:
+or if not, you can run the bootstrap script, which installs python/git, then `pip install`s:
 
     curl -fsSL https://raw.githubusercontent.com/uss-stargazer/vulpix/refs/heads/main/bootstrap.sh | bash
 
 windows has its own bootstrap script:
 
     iwr -Uri "https://raw.githubusercontent.com/uss-stargazer/vulpix/refs/heads/main/bootstrap.ps1" | iex
+
+### getting started
+
+after installing/bootstrapping:
+
+1. make sure `vulpix dotenv` is sourced in your shell profile (see `vulpix dotenv --help`)
+2. edit your blueprint
+
+- if this is your first time, the [quickstart config](src/vulpix/resources/quickstart_config) 
+  should have been copied to your [config dir](docs/directories.md#config). check it out!
+
+3. run `vulpix sync` to align your system to your blueprint
 
 ## usage
 
