@@ -392,38 +392,39 @@ class Cli(argparse.Namespace):
         links = dotfiles.iter_dotfiles(
             dotfiles_path, ignore_paths=[font_dir], logger=self.logger
         )
+
         if len(links) == 0:
             self.logger.warning("no dotfiles found")
-
-        # check existing link targets
-        if not self.whatif:
-            existing_targets = []
-            for item, link in links:
-                if link.exists():
-                    try:
-                        utils.rm_link(link)
-                    except OSError, ValueError:
-                        self.logger.debug("link already exists", exc_info=True)
-                        existing_targets.append(link)
-            if len(existing_targets) > 0:
-                print()  # style
-                self.logger.warning(
-                    "the following items will be overwritting and replaced by links:"
-                )
-                print("\n".join(["  - " + str(t) for t in existing_targets]) + "\n")
-                if not utils.verify("are you sure you want to continue?"):
-                    raise VulpixError("dotfiles aborted")
-
-                for target in existing_targets:
-                    utils.rm_fr(target)
-                print()  # style
-
-        # link dotfiles
-        _max_item_len = max(len(utils.pretty_path(l[0])) for l in links)
-        for item, link in links:
-            self.logger.info(utils.pretty_link_log(item, link, _max_item_len))
+        else:
+            # check existing link targets
             if not self.whatif:
-                utils.link(item, link, self.logger)
+                existing_targets = []
+                for item, link in links:
+                    if link.exists():
+                        try:
+                            utils.rm_link(link)
+                        except OSError, ValueError:
+                            self.logger.debug("link already exists", exc_info=True)
+                            existing_targets.append(link)
+                if len(existing_targets) > 0:
+                    print()  # style
+                    self.logger.warning(
+                        "the following items will be overwritting and replaced by links:"
+                    )
+                    print("\n".join(["  - " + str(t) for t in existing_targets]) + "\n")
+                    if not utils.verify("are you sure you want to continue?"):
+                        raise VulpixError("dotfiles aborted")
+
+                    for target in existing_targets:
+                        utils.rm_fr(target)
+                    print()  # style
+
+            # link dotfiles
+            _max_item_len = max(len(utils.pretty_path(l[0])) for l in links)
+            for item, link in links:
+                self.logger.info(utils.pretty_link_log(item, link, _max_item_len))
+                if not self.whatif:
+                    utils.link(item, link, self.logger)
 
         # install fonts
         if font_dir.exists() and font_dir.is_dir():
