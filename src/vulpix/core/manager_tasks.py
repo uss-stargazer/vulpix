@@ -1,0 +1,74 @@
+"""utility functions to standardize manager task naming conventions, plus it's more readable"""
+
+import re
+from dataclasses import dataclass
+
+from vulpix.core.tasks import ThreadedTaskQueue as Queue
+from vulpix.utils import path_as_salt
+
+
+@dataclass(frozen=True)
+class ManagerTask:
+    verb: str
+    manager: str
+    package: str = ""
+
+    @property
+    def name(self) -> str:
+        # clean as it was a path since a corresponding log file will be created
+        return path_as_salt(
+            f"{self.verb}[{self.package + '@' if self.package else ''}{self.manager}]"
+        )
+
+    @classmethod
+    def install(cls, package: str, manager: str):
+        return cls("install", manager, package)
+
+    @classmethod
+    def update(cls, package: str, manager: str):
+        return cls("update", manager, package)
+
+    @classmethod
+    def reinstall(cls, package: str, manager: str):
+        return cls("reinstall", manager, package)
+
+    @classmethod
+    def uninstall(cls, package: str, manager: str):
+        return cls("uninstall", manager, package)
+
+    @classmethod
+    def config(cls, package: str, manager: str):
+        return cls("config", manager, package)
+
+    def run(
+        self,
+        queue: Queue,
+        f: Queue.TaskFunction,
+        args: tuple | None = None,
+        kwargs: dict | None = None,
+    ):
+        queue.run_task(self.name, f, *(args or ()), **(kwargs or {}))
+
+
+package_task_pattern = re.compile("^(.+)\\[(.+)@(.+)\\]$")
+
+
+def parse_task_name(name: str) -> ManagerTask | None:
+    match = package_task_pattern.match(name)
+    if match:
+        return ManagerTask(match.group(1), match.group(3), match.group(2))
+    return None
+
+
+type TaskStatusDict = dict[ManagerTask, bool]
+
+
+def completed_package_tasks(og: dict[str, bool]) -> TaskStatusDict:
+    """filters out manager package tasks and returns with dict keys as parsed ManagerTasks"""
+    parsed: dict[ManagerTask, bool] = {}
+    for task_name, status in og.items():
+        task = parse_task_name(task_name)
+        if task:
+            parsed[task] = status
+
+    return parsed

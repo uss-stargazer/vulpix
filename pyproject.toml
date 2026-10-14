@@ -1,0 +1,78 @@
+[project]
+name = "vulpix"
+dynamic = ["version", "description"]
+requires-python = ">=3.14"
+dependencies = [
+  "ansicon==1.89.0",
+  "blessed==1.50.0",
+  "dacite==1.9.2",
+  "filelock==4.0.0",
+  "jinxed==2.1.0",
+  "PyYAML==6.0.3",
+  "wcwidth==0.8.4",
+]
+
+[project.scripts]
+vulpix = "vulpix.__main__:main"
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/vulpix/__init__.py"
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__"]
+defineConstant = { DEBUG = true }
+reportMissingImports = "error"
+pythonVersion = "3.14"
+pythonPlatform = "All"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+line-length = 88
+indent-width = 4
+target-version = "py314"
+
+[tool.ruff.lint]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
