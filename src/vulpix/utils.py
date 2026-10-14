@@ -4,7 +4,6 @@ import os
 import shutil
 import stat
 import subprocess
-import sys
 import threading
 from collections.abc import Callable
 from dataclasses import asdict
@@ -437,9 +436,3 @@ def merge_dicts(source: dict, destination: dict, concat_arrays: bool = False) ->
         else:
             destination[key] = value
     return destination
-
-
-def in_virtual_env() -> bool:
-    return (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix) or hasattr(
-        sys, "real_prefix"
-    )

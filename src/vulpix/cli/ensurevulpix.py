@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 from vulpix.core import VulpixError, logging, system
-from vulpix.utils import in_virtual_env, link
+from vulpix.utils import link
 
 
 def get_vulpix_bin() -> Path:
@@ -70,10 +70,6 @@ def ensure_vulpix_linux(vulpix_path: Path, logger: logging.Logger):
 
 
 def ensure_vulpix(logger: logging.Logger):
-    if in_virtual_env():
-        logger.warning("cannot ensure vulpix will be avilable because you're in a venv")
-        return
-
     vulpix_path = get_vulpix_bin()
     logger.debug(f"got vulpix at: {vulpix_path}")
 
