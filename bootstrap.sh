@@ -57,6 +57,7 @@ $PYTHON -m venv "$VENV"
 [[ -f "$VENV/bin/pip" ]] || fatal "venv created but couldn't find pip binary!"
 
 info "pip install vulpix"
+"$VENV/bin/pip" uninstall --yes vulpix # make sure uninstalled so it actually updates it
 "$VENV/bin/pip" install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
 export PATH="$VENV/bin:$PATH" # temporary, but vulpix bootstraps itself to (using ensurevulpix) on first run
 command_exists vulpix || fatal "install suppossedly succeeded, but vulpix isn't available"
