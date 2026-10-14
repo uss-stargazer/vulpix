@@ -53,11 +53,44 @@ def parse_args() -> Cli:
         "sync",
         help=sync_desc,
         description=sync_desc,
-        epilog="package managers are appended to package names before checking against regex like "
-        "`{name}@{manager}`. for example, regex of `.*@pip` would limit scope to the 'pip' manager."
+        epilog="NOTE: if option passed and no [REGEX], it defaults to `.*`"
         "\n\n"
-        "if no [opts] are supplied, runs with `--clean --apply --config`.",
+        "package managers are appended to package names before checking against regex like "
+        "`{name}@{manager}`. for example, regex of `.*@pip` would limit scope to packages under "
+        "the 'pip' manager."
+        "\n\n"
+        "if an option filter is supplied, only tasks of that type will run. if no [opts] are "
+        "supplied, runs with `--clean --apply --config`.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        usage="%(prog)s [FILTER_OPTS]",
+    )
+    sync_parser.add_argument(
+        "general",
+        type=regex_arg,
+        metavar="REGEX",
+        nargs="?",
+        default=".*",
+        help="filter for packages of all task types",
+    )
+    sync_parser.add_argument(
+        "-i",
+        "--install",
+        type=regex_arg,
+        metavar="REGEX",
+        nargs="?",
+        const=".*",
+        default=None,
+        help="if any packages are in the blueprint but are not installed, they will be installed",
+    )
+    sync_parser.add_argument(
+        "-u",
+        "--update",
+        type=regex_arg,
+        metavar="REGEX",
+        nargs="?",
+        const=".*",
+        default=None,
+        help="if any blueprint packages are already installed, they will be updated",
     )
     sync_parser.add_argument(
         "-a",
@@ -67,8 +100,7 @@ def parse_args() -> Cli:
         nargs="?",
         const=".*",
         default=None,
-        help="if any packages are in the blueprint but are not installed, they will be "
-        "installed. if any blueprint packages are already installed, they will be updated.",
+        help="basically `--install ... --update ...` (but you can also stack these options too)",
     )
     sync_parser.add_argument(
         "-x",
@@ -79,7 +111,7 @@ def parse_args() -> Cli:
         const=".*",
         default=None,
         help="if any packages are installed but are not a package specified in blueprint "
-        "they will be uninstalled.",
+        "they will be uninstalled",
     )
     sync_parser.add_argument(
         "-r",
@@ -96,9 +128,8 @@ def parse_args() -> Cli:
         nargs="?",
         const=".*",
         default=None,
-        help="runs config managers for the specified packages (or all if no regex). if any other "
-        "operations are run, only packages corresponding to successful tasks will be run (if at "
-        "least one task that references a package fails, its config will not be run).",
+        help="runs config managers for matching packages (if any other operations are run, only "
+        "configs for successful packages will be run)",
     )
 
     # dotfiles command
@@ -152,16 +183,10 @@ def parse_args() -> Cli:
     # actaually parse it! -----------------------------------------
     cli = Cli()
     parser.parse_args(namespace=cli)
+
+    # show help if no command
     if not cli.command:
         parser.exit(status=1, message=parser.format_help())
-
-    # no sync opts = --clean --apply --config
-    if cli.command == "sync" and all(
-        o is None for o in [cli.apply, cli.clean, cli.config, cli.reinstall]
-    ):
-        cli.clean = re.compile(".*")
-        cli.apply = re.compile(".*")
-        cli.config = re.compile(".*")
 
     return cli
 

@@ -19,66 +19,76 @@ from vulpix.core.managers import Package
 failure_s, success_s = term.red("failure"), term.green("success")
 
 
+type RegexSearch = Callable[[str], bool]
 type PackageDiffFilter = Callable[
     [str, package_managers.PackageDiff], package_managers.PackageDiff
 ]
 type ConfigPackageFilter = Callable[[list[Package]], list[Package]]
 
 
-def check_package(package: Package, regex: re.Pattern[str]) -> bool:
-    return regex.search(str(package)) is not None
+def filter_package_names(
+    names: list[str],
+    manager: str,
+    rg: list[re.Pattern[str]],
+    negate: bool = False,
+) -> list[str]:
+    if not negate:
+        return [n for n in names if Package(n, manager).check_match(*rg)]
+    return [n for n in names if not Package(n, manager).check_match(*rg)]
+
+
+def filter_packages(
+    packages: list[Package], rg: list[re.Pattern[str]]
+) -> list[Package]:
+    return [p for p in packages if p.check_match(*rg)]
 
 
 def build_package_filter(
+    general: re.Pattern[str],
+    install: re.Pattern[str] | None,
+    update: re.Pattern[str] | None,
     apply: re.Pattern[str] | None,
     clean: re.Pattern[str] | None,
     reinstall: re.Pattern[str] | None,
 ) -> PackageDiffFilter:
-    def _filter(
-        manager: str, changes: package_managers.PackageDiff
+    def _diff_filter(
+        manager: str, diff: package_managers.PackageDiff
     ) -> package_managers.PackageDiff:
-        def filter_packages(
-            packages: list[str], regex: re.Pattern[str], negate: bool = False
-        ) -> list[str]:
-            if negate:
-                return [
-                    p for p in packages if not check_package(Package(p, manager), regex)
-                ]
-            return [p for p in packages if check_package(Package(p, manager), regex)]
-
         # reinstall takes precedent (this is also different since we are telling it to reinstall
         # instead of install/update, rather than just filtering)
         if reinstall is not None:
-            force_reinstall = filter_packages(
-                [*changes.to_install, *changes.to_update], reinstall
+            reinstall_pkgs = filter_package_names(
+                [*diff.to_install, *diff.to_update], manager, rg=[reinstall]
             )
-            changes.to_install = filter_packages(
-                changes.to_install, reinstall, negate=True
+            diff.to_install = filter_package_names(
+                diff.to_install, manager, rg=[reinstall], negate=True
             )
-            changes.to_update = filter_packages(
-                changes.to_update, reinstall, negate=True
+            diff.to_update = filter_package_names(
+                diff.to_update, manager, rg=[reinstall], negate=True
             )
-            changes.to_reinstall.extend(force_reinstall)
+            diff.to_reinstall.extend(reinstall_pkgs)
 
         # then clean and apply filters
-        if clean is None:
-            changes.to_uninstall = []
-        else:
-            changes.to_uninstall = filter_packages(changes.to_uninstall, clean)
-        if apply is None:
-            changes.to_install = []
-            changes.to_update = []
-        else:
-            changes.to_install = filter_packages(changes.to_install, apply)
-            changes.to_update = filter_packages(changes.to_update, apply)
+        def _filter(packages: list[str], *patterns: re.Pattern[str] | None):
+            if all(p is None for p in patterns):
+                packages[:] = []
+            else:
+                rg = [p for p in patterns if p is not None]
+                packages[:] = filter_package_names(packages, manager, [*rg, general])
 
-        return changes
+        _filter(diff.to_uninstall, clean)
+        _filter(diff.to_install, install, apply)
+        _filter(diff.to_update, update, apply)
 
-    return _filter
+        return diff
+
+    return _diff_filter
 
 
 def build_config_filter(
-    package_pattern: re.Pattern[str], package_management_tasks: TaskStatusDict | None
+    general: re.Pattern[str],
+    config: re.Pattern[str],
+    package_management_tasks: TaskStatusDict | None,
 ) -> ConfigPackageFilter:
     def _filter(packages: list[Package]) -> list[Package]:
         if package_management_tasks:
@@ -89,7 +99,7 @@ def build_config_filter(
             }
             packages = [p for p in packages if package_tasks.get(p)]
 
-        return [p for p in packages if check_package(p, package_pattern)]
+        return filter_packages(packages, rg=[config, general])
 
     return _filter
 
@@ -144,10 +154,13 @@ class Cli(argparse.Namespace):
     command: Command | None = None
 
     # sync command
+    general: re.Pattern[str]
+    install: re.Pattern[str] | None = None
+    update: re.Pattern[str] | None = None
     apply: re.Pattern[str] | None = None
     clean: re.Pattern[str] | None = None
-    config: re.Pattern[str] | None = None
     reinstall: re.Pattern[str] | None = None
+    config: re.Pattern[str] | None = None
 
     # dotfiles command
     path: str | None = None
@@ -158,6 +171,17 @@ class Cli(argparse.Namespace):
 
     # dotenv command
     shell: Literal["sh", "pwsh"] | None
+
+    @property
+    def sync_options(self):
+        return [
+            self.install,
+            self.update,
+            self.apply,
+            self.clean,
+            self.reinstall,
+            self.config,
+        ]
 
     def init_console_logging(self):
         """this is the minimium required logger after settings have been populated"""
@@ -324,16 +348,24 @@ class Cli(argparse.Namespace):
         dotenv.datafile.loadf()
         self.get_expanded_blueprint()
 
+        if all(o is None for o in self.sync_options):
+            # no opts = --clean --apply --config
+            self.clean = re.compile(".*")
+            self.apply = re.compile(".*")
+            self.config = re.compile(".*")
+            self.logger.debug(f"expanded --clean --apply --config")
+        package_manage_options = self.sync_options[:-1]
+
+        # package management
         tasks: TaskStatusDict | None = None
-        if any(o is not None for o in [self.apply, self.clean, self.reinstall]):
-            package_filter = build_package_filter(
-                self.apply, self.clean, self.reinstall
-            )
+        if any(o is not None for o in package_manage_options):
+            package_filter = build_package_filter(self.general, *package_manage_options)
             tasks = self.package_manage_section(package_filter)
             print_section_summary(tasks, self.logger)
 
+        # config management
         if self.config is not None:
-            config_filter = build_config_filter(self.config, tasks)
+            config_filter = build_config_filter(self.general, self.config, tasks)
             config_tasks = self.package_config_section(config_filter)
             print_section_summary(config_tasks, self.logger)
             tasks = utils.merge_dicts(tasks or {}, config_tasks)

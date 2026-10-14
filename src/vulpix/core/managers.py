@@ -4,6 +4,7 @@ an entry point group.
 """
 
 import pkgutil
+import re
 from abc import ABC
 from dataclasses import dataclass
 from importlib.metadata import entry_points
@@ -35,6 +36,10 @@ class Package:
 
     def __repr__(self) -> str:
         return f"{self.name}@{self.package_manager}"
+
+    def check_match(self, *patterns: re.Pattern[str]) -> bool:
+        s = str(self)
+        return all(p.search(s) is not None for p in patterns)
 
 
 def _get_namespace_modules(namespace_pkg: ModuleType) -> dict[str, str]:

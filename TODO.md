@@ -49,4 +49,3 @@
 
 - shell completion for subcommands, packages, etc
 - publish to pypi
-- have field in blueprint for required plugin packages?

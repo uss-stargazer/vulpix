@@ -64,26 +64,33 @@ windows has its own bootstrap script:
       -b, --blueprint PATH  specify blueprint.yaml path, otherwise searches default locations
       --no-fullscreen       no fullscreen/alt screen
 
-of particular not is the sync subcommand:
+of particular note is the sync subcommand:
 
-    usage: vulpix sync [-h] [-a [REGEX]] [-x [REGEX]] [-r REGEX] [-c [REGEX]]
+    usage: vulpix sync [FILTER_OPTS]
 
     syncs system/user with the blueprint
 
+    positional arguments:
+      REGEX                 filter for packages of all task types
+
     options:
       -h, --help            show this help message and exit
-      -a, --apply [REGEX]   if any packages are in the blueprint but are not installed, they will be
-                            installed. if any blueprint packages are already installed, they will be
-                            updated.
+      -i, --install [REGEX] if any packages are in the blueprint but are not installed, they will be
+                            installed
+      -u, --update [REGEX]  if any blueprint packages are already installed, they will be updated
+      -a, --apply [REGEX]   basically --install ... --update ... (but you can also stack these
+                            options too)
       -x, --clean [REGEX]   if any packages are installed but are not a package specified in
-                            blueprint they will be uninstalled.
+                            blueprint they will be uninstalled
       -r, --reinstall REGEX uninstalls then reinstalls matching packages
-      -c, --config [REGEX]  runs config managers for the specified packages (or all if no regex).
-                            if any other operations are run, only packages corresponding to
-                            successful tasks will be run (if at least one task that references a
-                            package fails, its config will not be run).
+      -c, --config [REGEX]  runs config managers for matching packages (if any other operations are 
+                            run, only configs for successful packages will be run)
+
+    NOTE: if option passed and no [REGEX], it defaults to .*
 
     package managers are appended to package names before checking against regex like 
-    {name}@{manager}. for example, regex of .*@pip would limit scope to the 'pip' manager.
+    {name}@{manager}. for example, regex of .*@pip would limit scope to packages under the 'pip'
+    manager.
 
-    if no [opts] are supplied, runs with --clean --apply --config.
+    if an option filter is supplied, only tasks of that type will run. if no [opts] are supplied,
+    runs with --clean --apply --config.
