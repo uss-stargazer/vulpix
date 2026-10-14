@@ -2,7 +2,6 @@
 
 import os
 import shutil
-import winreg
 from pathlib import Path
 
 from vulpix.core import VulpixError, logging, system
@@ -21,6 +20,8 @@ def get_vulpix_bin() -> Path:
 
 def ensure_vulpix_windows(vulpix_path: Path, logger: logging.Logger):
     """adds the parent dir of vulpix.exe to PATH in environmental var registry"""
+
+    import winreg
 
     vulpix_bin_dir = vulpix_path.parent
 

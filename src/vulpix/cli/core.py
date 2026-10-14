@@ -353,7 +353,7 @@ class Cli(argparse.Namespace):
             self.clean = re.compile(".*")
             self.apply = re.compile(".*")
             self.config = re.compile(".*")
-            self.logger.debug(f"expanded --clean --apply --config")
+            self.logger.debug("expanded --clean --apply --config")
         package_manage_options = self.sync_options[:-1]
 
         # package management
