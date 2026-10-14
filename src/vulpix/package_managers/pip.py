@@ -8,60 +8,99 @@ missing/failed packages (causing the whole operation to be aborted, which is not
 context of vulpix because just one offending package in the blueprint would screw it all up).
 """
 
-import os
 import sys
-from subprocess import CalledProcessError
+from pathlib import Path
 
-from vulpix.core import VulpixError, logging, tasks
+from vulpix.core import VulpixError, dirs, logging, system, tasks
 from vulpix.package_managers import (
-    InvalidPackage,
     ManagerTask,
     PackageDiff,
     PackageManager,
 )
-from vulpix.utils import LoggedCommand, in_virtual_env
+from vulpix.utils import LoggedCommand
 
 
-def pip_cmd(*args: str) -> LoggedCommand:
-    return LoggedCommand(sys.executable, "-m", "pip", *args)
+class Venv:
+    venv: Path
+    logger: logging.Logger
 
+    def _script(self, s: str) -> Path:
+        if system.OS == "windows":
+            subdir = "Scripts"
+            s += ".exe"
+        else:
+            subdir = "bin"
+        return self.venv / subdir / s
 
-def get_packages(logger: logging.Logger) -> list[str]:
-    cmd = pip_cmd("list", "--format=freeze")
-    cmd.run(logger, log_stdout=False)
-    stdout = [l.strip() for l in cmd.stdout or [] if l.strip()]
-    packages = [p.split("=", 1)[0] for p in stdout]
-    logger.debug(f"all pip packages: {packages}")
-    return packages
+    def __init__(self, path: Path, logger: logging.Logger):
+        self.venv = path
+        self.logger = logger
 
+    def exists(self) -> bool:
+        required_paths = [self.venv, self._script("python"), self._script("pip")]
+        return all(p.exists() for p in required_paths)
 
-def get_top_level_packages(logger: logging.Logger) -> list[str]:
-    cmd = pip_cmd("list", "--not-required", "--format=freeze")
-    cmd.run(logger, log_stdout=False)
-    stdout = [l.strip() for l in cmd.stdout or [] if l.strip()]
-    packages = [p.split("=", 1)[0] for p in stdout]
-    logger.debug(f"top pip packages: {packages}")
-    return packages
+    def create(self):
+        if self.exists():
+            self.logger.debug("venv already exists")
+            return
+
+        try:
+            self.logger.info(f"creating internal venv at '{self.venv}'")
+            cmd = LoggedCommand(sys.executable, "-m", "venv", str(self.venv))
+            cmd.run(self.logger)
+        except VulpixError:
+            raise VulpixError(f"could not create virtual env at {self.venv}")
+
+        if not self.exists():
+            raise VulpixError(
+                f"virtual env created at {self.venv}, but no python/pip binaries"
+            )
+
+    def pip(self, *args: str) -> LoggedCommand:
+        return LoggedCommand(str(self._script("pip")), *args)
+
+    def get_packages(self) -> list[str]:
+        if not self.exists():
+            return []
+
+        cmd = self.pip("list", "--format=freeze").run(self.logger, log_stdout=False)
+        stdout = [l.strip() for l in cmd.stdout or [] if l.strip()]
+        packages = [p.split("=", 1)[0] for p in stdout]
+        self.logger.debug(f"all pip packages: {packages}")
+        return packages
+
+    def get_top_level_packages(self) -> list[str]:
+        if not self.exists():
+            return []
+
+        cmd = self.pip("list", "--not-required", "--format=freeze").run(
+            self.logger, log_stdout=False
+        )
+        stdout = [l.strip() for l in cmd.stdout or [] if l.strip()]
+        packages = [p.split("=", 1)[0] for p in stdout]
+        self.logger.debug(f"top pip packages: {packages}")
+        return packages
 
 
 @tasks.task_function
-def install_package(package: str, logger: logging.Logger):
-    pip_cmd("install", package).run(logger)
+def install_package(package: str, venv: Venv, logger: logging.Logger):
+    venv.pip("install", package).run(logger)
 
 
 @tasks.task_function
-def update_package(package: str, logger: logging.Logger):
-    pip_cmd("install", "--upgrade", "--upgrade-strategy=eager", package).run(logger)
+def update_package(package: str, venv: Venv, logger: logging.Logger):
+    venv.pip("install", "--upgrade", "--upgrade-strategy=eager", package).run(logger)
 
 
 @tasks.task_function
-def reinstall_package(package: str, logger: logging.Logger):
-    pip_cmd("install", "--force-reinstall", package).run(logger)
+def reinstall_package(package: str, venv: Venv, logger: logging.Logger):
+    venv.pip("install", "--force-reinstall", package).run(logger)
 
 
 @tasks.task_function
-def uninstall_package(package: str, logger: logging.Logger):
-    pip_cmd("uninstall", "--yes", package).run(logger)
+def uninstall_package(package: str, venv: Venv, logger: logging.Logger):
+    venv.pip("uninstall", "--yes", package).run(logger)
 
 
 task_by_verb = {
@@ -73,36 +112,34 @@ task_by_verb = {
 
 
 class PipManager(PackageManager):
-    main_logger: logging.Logger
+    venv_path = dirs.VULPIX_DATA / "pip/.venv"
+    venv: Venv
 
     def __init__(self):
-        self.main_logger = logging.getLogger("main")
-
-        # since this is meant to work as a system package manager, no venvs
-        if in_virtual_env() and not os.getenv("VULPIX_IGNORE_VENV"):
-            raise VulpixError("cannot use 'pip' manager in virtual env")
+        main_logger = logging.getLogger("main")
+        self.venv = Venv(self.venv_path, main_logger)
 
         # make sure pip is installed
         try:
-            pip_cmd("--version").run(self.main_logger, log_stdout=False)
-        except CalledProcessError:
+            LoggedCommand(sys.executable, "-m", "pip", "--version").run(
+                main_logger, log_stdout=False
+            )
+        except VulpixError:
             raise VulpixError("pip module is required for 'pip' package manager")
 
     def check_packages(self, packages: list[str]) -> None:
-        # super simple check; this way it accepts package names, version modifers, git repos, etc.
-        for package in packages:
-            if " " in package:
-                raise InvalidPackage(package, manager="pip")
+        # defer package checking to the pip binary when running
+        pass
 
     def get_package_diff(self, blueprint_packages: list[str]) -> PackageDiff:
         diff = PackageDiff()
 
-        top_level_installed = get_top_level_packages(self.main_logger)
+        top_level_installed = self.venv.get_top_level_packages()
         diff.to_uninstall = [
             p for p in top_level_installed if p not in blueprint_packages
         ]
 
-        all_installed = get_packages(self.main_logger)
+        all_installed = self.venv.get_packages()
         for p in blueprint_packages:
             if p in all_installed:
                 diff.to_update.append(p)
@@ -115,7 +152,12 @@ class PipManager(PackageManager):
         return diff
 
     @tasks.task_function
-    def apply_changes(self, diff: PackageDiff, queue: tasks.ThreadedTaskQueue) -> None:
+    def apply_changes(
+        self, diff: PackageDiff, logger: logging.Logger, queue: tasks.ThreadedTaskQueue
+    ) -> None:
+        self.venv.logger = logger
+        self.venv.create()
+
         tasks = [ManagerTask.uninstall(p, "pip") for p in diff.to_uninstall]
         tasks.extend([ManagerTask.reinstall(p, "pip") for p in diff.to_reinstall])
         tasks.extend([ManagerTask.install(p, "pip") for p in diff.to_install])
@@ -123,7 +165,7 @@ class PipManager(PackageManager):
 
         # tasks have to be run synchronously (pip, i'm disappointed in you...)
         for task in tasks:
-            task.run(queue, task_by_verb[task.verb], args=(task.package,))
+            task.run(queue, task_by_verb[task.verb], args=(task.package, self.venv))
             queue.wait_for_tasks([task.name])  # wait before continuing
 
 
