@@ -48,21 +48,12 @@ command_exists git || fatal 'git not available; install using os package manager
 
 # step 2: install vulpix --------------------------------------------------------------------------
 
-# this corresponds to the internal venv for the 'pip' package manager
-# (see `src/vulpix/package_managers/pip.py`). this is necessary since some linux distros manually
-# control the global pip env, so we need our own.
-VENV="$VULPIX_DATA/pip/.venv"
-info "bootstrapping venv in '$VENV'"
-$PYTHON -m venv "$VENV"
-[[ -f "$VENV/bin/pip" ]] || fatal "venv created but couldn't find pip binary!"
-
+# TODO: workaround if pip doesn't allow global installs by default (like on debian)
 info "pip install vulpix"
-"$VENV/bin/pip" uninstall --yes vulpix # make sure uninstalled so it actually updates it
-"$VENV/bin/pip" install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
-export PATH="$VENV/bin:$PATH" # temporary, but vulpix bootstraps itself to (using ensurevulpix) on first run
+$PYTHON -m pip install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
 command_exists vulpix || fatal "install suppossedly succeeded, but vulpix isn't available"
 
 # step 3: first run for registering blueprint packages --------------------------------------------
 
-info "running vulpix for the first time"
+info 'running vulpix for the first time'
 vulpix sync
