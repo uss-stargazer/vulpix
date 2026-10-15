@@ -5,6 +5,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import sysconfig
 import threading
 from collections.abc import Callable
 from dataclasses import asdict
@@ -443,3 +444,11 @@ def in_virtual_env() -> bool:
     return (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix) or hasattr(
         sys, "real_prefix"
     )
+
+
+def pyenv_is_externally_managed():
+    stdlib_path = sysconfig.get_path("stdlib")
+    if not stdlib_path:
+        return False
+    marker_path = os.path.join(stdlib_path, "EXTERNALLY-MANAGED")
+    return os.path.exists(marker_path)

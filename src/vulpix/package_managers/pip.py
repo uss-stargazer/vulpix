@@ -19,7 +19,7 @@ from vulpix.package_managers import (
     PackageDiff,
     PackageManager,
 )
-from vulpix.utils import LoggedCommand, in_virtual_env
+from vulpix.utils import LoggedCommand, in_virtual_env, pyenv_is_externally_managed
 
 
 def pip_cmd(*args: str) -> LoggedCommand:
@@ -78,9 +78,11 @@ class PipManager(PackageManager):
     def __init__(self):
         self.main_logger = logging.getLogger("main")
 
-        # since this is meant to work as a system package manager, no venvs
+        # meant to work as a system package manager, so no virtual or externally managed envs
         if in_virtual_env() and not os.getenv("VULPIX_IGNORE_VENV"):
-            raise VulpixError("cannot use 'pip' manager in virtual env")
+            raise VulpixError("you shouldn't use the 'pip' manager in a virtual env")
+        if pyenv_is_externally_managed():
+            raise VulpixError("can't use 'pip' since global env is externally managed")
 
         # make sure pip is installed
         try:
