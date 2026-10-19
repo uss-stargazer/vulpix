@@ -4,8 +4,8 @@ a "manager" is a package manager that vulpix supports abstraction over.
 
 there are two types of managers:
 
-- package managers ([docs](./package_managers.md))
-- config managers ([docs](./config_managers.md))
+- [package managers](./package_managers.md)
+- [config managers](./config_managers.md)
 
 managers are imported like a plugin system. vulpix comes with some default managers, but other
 python repos can register their own managers (package or config) as long as they follow an

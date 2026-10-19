@@ -3,11 +3,12 @@
 the main target of bootstrap is to install the vulpix package with pip (or any other python manager
 that can expose target scripts). to do this, this is what the bootstrap scripts do:
 
-1. **ensure `python` and `git` are installed**: python is required for obvious reasons. git is
+1. **ensure dependencies are installed**: `python` is required for obvious reasons. `git` is
    required because `pip install git+{REPO}` requires it and that is how vulpix is installed (TODO:
-   upload pypi so this is not necessary)
+   upload pypi so this is not necessary). `pipx` is required on linux because `pip` in the global
+   environment isn't reliable (it's often managed by the distro).
 
-- *for linux*: it's the os's job to compile and install packages like git and python, so bootstrap
+- *for linux*: it's the os's job to compile and install packages like git/python/pipx, so bootstrap
   just checks for existence (TODO: check linux distro to determine package manager, and bootstrap
   packages with that; requires more bultin vulpix package managers)
 - *for windows*: any of the two packages that aren't available are bootstrapped using the `manual`
@@ -16,8 +17,8 @@ that can expose target scripts). to do this, this is what the bootstrap scripts 
 - in either above case, if the bootstrap script bootstraps any packages, it writes writes a log of
   them (by manager) to `$VULPIX_DATA/bootstrapped.json`.
 
-2. **install vulpix**: simply runs `pip install git+{THIS_REPO}` (TODO: support other methods of
-   installation; e.g. pipx, uv)
+2. **install vulpix**: simply runs `pip install git+{THIS_REPO}` or `pipx install git+{THIS_REPO}`
+   (TODO: support other methods of installation; e.g. uv)
 
 3. **initial vulpix run**: it is required to run `vulpix sync` to finish the bootstrap process
    because it cleans everything up, registers bootstrapped packages, sets up the config dir, and

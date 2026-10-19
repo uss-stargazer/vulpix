@@ -5,14 +5,6 @@ uninstall, reinstall, or update (the user can filter these actions using the cli
 
 ## vulpix defaults
 
-### `manual`
-
-custom package manager that is manually implemented by vulpix (hence "manual" from vulpix's
-perspective, and from your perspective too if you peek at the code or contribute).
-
-see [here](../src/vulpix/package_managers/manual/__init__.py) for implementation details and
-[here](../src/vulpix/package_managers/manual/packages/) for a list of supported packages.
-
 ### `expect`
 
 expect isn't really a package manager. all it does is check if the package is already installed, and
@@ -34,6 +26,14 @@ package is a valid command. you can bypass these checks (see the tip below).
 > the expect manager supports the special package name syntax `package_name!` (the whole id would be
 > like `bash!@expect`). in this case, literally no checks are preformed (it's just comment at this
 > point).
+
+### `manual`
+
+custom package manager that is manually implemented by vulpix (hence "manual" from vulpix's
+perspective, and from your perspective too if you peek at the code or contribute).
+
+see [here](../src/vulpix/package_managers/manual/__init__.py) for implementation details and
+[here](../src/vulpix/package_managers/manual/packages/) for a list of supported packages.
 
 ### `pip`
 
@@ -66,7 +66,7 @@ and binaries.
 
 advantages over the `pip` package manager:
 
-- it also solves global packages on "externally managed" global environments (common on
+- it solves global packages on "externally managed" global environments (common on
   linux distros, e.g. debian), which is not allowed for `pip`
 - operations can be run in parallel, so it's much faster
 - since each package has it's own virtual env, no dependency resolution errors
