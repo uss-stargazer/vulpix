@@ -14,7 +14,6 @@ from subprocess import CalledProcessError
 
 from vulpix.core import VulpixError, logging, tasks
 from vulpix.package_managers import (
-    InvalidPackage,
     ManagerTask,
     PackageDiff,
     PackageManager,
@@ -91,10 +90,8 @@ class PipManager(PackageManager):
             raise VulpixError("pip module is required for 'pip' package manager")
 
     def check_packages(self, packages: list[str]) -> None:
-        # super simple check; this way it accepts package names, version modifers, git repos, etc.
-        for package in packages:
-            if " " in package:
-                raise InvalidPackage(package, manager="pip")
+        # defer package checking to actual pip task
+        pass
 
     def get_package_diff(self, blueprint_packages: list[str]) -> PackageDiff:
         diff = PackageDiff()

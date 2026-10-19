@@ -37,13 +37,16 @@ package is a valid command. you can bypass these checks (see the tip below).
 
 ### `pip`
 
-package manager that drives the `pip`, which is the default python package manager.
+package manager that drives [pip](https://pip.pypa.io/), which is the default python package
+manager.
 
 > [!IMPORTANT]
 > things to note:
 > 
 > - no virtual environments are created; everything is in the global pip environment
-> - if the global python env is externally managed (e.g. on debian), this manager cannot be used
+>   - this becomes messy since two packages could depend on two different version of the same
+>     dependency (in this case, one of the target packages would fail)
+>   - if the global python env is externally managed (e.g. on debian), this manager cannot be used
 > - pip is pretty slow
 >   - pip itself is yet to support parallel downloads/installs
 >   - each operations must be executed individually and synchronously
@@ -53,6 +56,20 @@ package manager that drives the `pip`, which is the default python package manag
 > [!TIP]
 > it's recommended to use the `pipx`, `uv`, etc. package managers instead of pip for the above
 > reasons.
+
+### `pipx`
+
+package manager that drives [pipx](https://pipx.pypa.io/), which is NOT the default python package
+manager (pip), but a wrapper over it that creates a self-contained virtual environment for each
+global package. this makes it a much better alternative to `pip` at the global level for cli tools
+and binaries.
+
+advantages over the `pip` package manager:
+
+- it also solves global packages on "externally managed" global environments (common on
+  linux distros, e.g. debian), which is not allowed for `pip`
+- operations can be run in parallel, so it's much faster
+- since each package has it's own virtual env, no dependency resolution errors
 
 ## create your own
 
