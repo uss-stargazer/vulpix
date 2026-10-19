@@ -505,11 +505,11 @@ class Cli(argparse.Namespace):
         # intercept all errors so the terminal doesn't get cluttered (unless verbose)
         try:
             match self.command:
-                case "sync":
+                case "sync" | "s":
                     command = self.sync_command
-                case "dotfiles":
+                case "dotfiles" | "d":
                     command = self.dotfiles_command
-                case "blueprint":
+                case "blueprint" | "bp":
                     command = self.blueprint_command
                 case "dotenv":
                     command = self.dotenv_command

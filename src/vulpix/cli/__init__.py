@@ -51,6 +51,7 @@ def parse_args() -> Cli:
     sync_desc = "syncs system/user with the blueprint"
     sync_parser = subparsers.add_parser(
         "sync",
+        aliases=["s"],
         help=sync_desc,
         description=sync_desc,
         epilog="NOTE: if option passed and no [REGEX], it defaults to `.*`"
@@ -135,7 +136,7 @@ def parse_args() -> Cli:
     # dotfiles command
     dotfiles_desc = "symlinks dotfiles to system locations"
     dotfiles_parser = subparsers.add_parser(
-        "dotfiles", help=dotfiles_desc, description=dotfiles_desc
+        "dotfiles", aliases=["d"], help=dotfiles_desc, description=dotfiles_desc
     )
     dotfiles_parser.add_argument(
         "path",
@@ -146,7 +147,9 @@ def parse_args() -> Cli:
 
     # blueprint command
     blueprint_desc = "open blueprint in $VISUAL/$EDITOR"
-    subparsers.add_parser("blueprint", help=blueprint_desc, description=blueprint_desc)
+    subparsers.add_parser(
+        "blueprint", aliases=["bp"], help=blueprint_desc, description=blueprint_desc
+    )
 
     # dotenv command
     dotenv_desc = "source vulpix dotenv in your shell"
