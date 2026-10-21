@@ -5,21 +5,7 @@ uninstall, reinstall, or update (the user can filter these actions using the cli
 
 ## vulpix defaults
 
-### `manual`
-
-    name:           manual
-    supports_async: true
-
-custom package manager that is manually implemented by vulpix (hence "manual" from vulpix's
-perspective, and from your perspective too if you peek at the code or contribute).
-
-see [here](../src/vulpix/package_managers/manual/__init__.py) for implementation details and
-[here](../src/vulpix/package_managers/manual/packages/) for a list of supported packages.
-
 ### `expect`
-
-    name:           expect
-    supports_async: true
 
 expect isn't really a package manager. all it does is check if the package is already installed, and
 if it is, it succeeds and continues to config (or whatever else). this is useful for many reasons,
@@ -41,43 +27,49 @@ package is a valid command. you can bypass these checks (see the tip below).
 > like `bash!@expect`). in this case, literally no checks are preformed (it's just comment at this
 > point).
 
-### `apt`
+### `manual`
 
-    name:           apt
-    supports_async: false
+custom package manager that is manually implemented by vulpix (hence "manual" from vulpix's
+perspective, and from your perspective too if you peek at the code or contribute).
 
-abstraction over the [apt package manager](https://wiki.debian.org/Apt). handles
-installing/updating/removing apt packages as well as updating apt sources as needed. can run in
-strict or safe mode.
+see [here](../src/vulpix/package_managers/manual/__init__.py) for implementation details and
+[here](../src/vulpix/package_managers/manual/packages/) for a list of supported packages.
+
+### `pip`
+
+package manager that drives [pip](https://pip.pypa.io/), which is the default python package
+manager.
 
 > [!IMPORTANT]
->
-> the apt manager has two modes:
->
-> - safe: does not clobber existing packages that are installed before running vulpix. instead, it
->   internally keeps track of apt packages installed through vulpix, and uses that to aligin
->   blueprint with. for example, a bunch of packages are usually installed by default (like sudo,
->   grep, ...) but running `vulpix` without those in your blueprint will not uninstall them. another
->   example, if you first manually run `apt install bash`, `vulpix install bash` will mark "bash" as
->   to_install instead of to_update because bash is not in its internal list.
-> - strict: _all_ apt packages installed on the system are aligned with blueprint. more
->   specifically, uses the top-level packages that are not dependencies of other packages as the
->   list, and makes changes to force that list to align with blueprint. so core utils like sudo have
->   to be explicitly defined in blueprint.
-
+> things to note:
+> 
+> - no virtual environments are created; everything is in the global pip environment
+>   - this becomes messy since two packages could depend on two different version of the same
+>     dependency (in this case, one of the target packages would fail)
+>   - if the global python env is externally managed (e.g. on debian), this manager cannot be used
+> - pip is pretty slow
+>   - pip itself is yet to support parallel downloads/installs
+>   - each operations must be executed individually and synchronously
+>   - an seperate `pip` process has to be spawned for each task since for batched operations, the
+>     entire operation aborts if just one package fails
+    
 > [!TIP]
->
-> the apt manager supports the special package name syntax `package_name?` (the whole id would be
-> like `bash?@apt`). this means to install the apt package with that id directly (e.g.
-> `apt install ${package_name}`), instead of using the aliased package templates defined within the
-> vulpix library.
+> it's recommended to use the `pipx`, `uv`, etc. package managers instead of pip for the above
+> reasons.
 
-since apt usually requires being run as root, it's not recommended to put apt packages in your user
-blueprint. instead, you can have a system-level root blueprint that defines all the apt packages for
-machine. then, if you require some packages for your user, you can defines those packages with the
-[expect](#expect) manager.
+### `pipx`
 
-see [here](../library/managers/apt/README.md) for implementation details.
+package manager that drives [pipx](https://pipx.pypa.io/), which is NOT the default python package
+manager (pip), but a wrapper over it that creates a self-contained virtual environment for each
+global package. this makes it a much better alternative to `pip` at the global level for cli tools
+and binaries.
+
+advantages over the `pip` package manager:
+
+- it solves global packages on "externally managed" global environments (common on
+  linux distros, e.g. debian), which is not allowed for `pip`
+- operations can be run in parallel, so it's much faster
+- since each package has it's own virtual env, no dependency resolution errors
 
 ## create your own
 

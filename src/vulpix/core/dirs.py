@@ -17,7 +17,10 @@ def data(app: str) -> Path:
         if system.OS == "windows":
             return Path(os.environ["LOCALAPPDATA"]) / f"{app}-data"
         else:
-            return Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+            return (
+                Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+                / app
+            )
 
 
 def log(app: str) -> Path:
@@ -37,7 +40,9 @@ def config(app: str) -> Path:
         if system.OS == "windows":
             return Path(os.environ["LOCALAPPDATA"]) / app
         else:
-            return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+            return (
+                Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / app
+            )
 
 
 def tmp(app: str) -> Path:

@@ -1,7 +1,6 @@
 """utils for symlinking a dotfiles repo to system"""
 
 import shutil
-import winreg
 from pathlib import Path
 
 from vulpix.core import dirs, logging, system
@@ -26,6 +25,8 @@ def install_fonts(font_dir: Path, logger: logging.Logger):
 
     match system.OS:
         case "windows":
+            import winreg
+
             reg_key = (
                 winreg.HKEY_LOCAL_MACHINE
                 if system.IS_ROOT

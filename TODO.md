@@ -49,3 +49,4 @@
 
 - shell completion for subcommands, packages, etc
 - publish to pypi
+- support PEP723 for `scripts` config manager

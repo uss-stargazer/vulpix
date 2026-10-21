@@ -10,7 +10,7 @@ it uses `blueprint.yaml` to abstract two main things:
 > [!IMPORTANT]
 >
 > vulpix uses a plugin-like architecture for both package and config managers
-> ([read this](docs/managers.md)). basically, vulpix is just a pretty cli wrapper around other
+> ([manager docs](docs/managers.md)). basically, vulpix is just a pretty cli wrapper around other
 > package managers; it doesn't actually do any of the stuff. while it comes with common package
 > managers (apt, pip pacman, etc.) and a default config manager, you are encouraged to build
 > your own.
@@ -34,7 +34,8 @@ if you already have python installed, just:
 
     pip install git+https://github.com/uss-stargazer/vulpix
 
-or if not, you can run the bootstrap script, which installs python/git, then `pip install`s:
+or if not, you can run the bootstrap script, which checks dependencies, installs them (if possible),
+and finally installs vulpix (see [bootstrap docs](docs/bootstrap.md)):
 
     curl -fsSL https://raw.githubusercontent.com/uss-stargazer/vulpix/refs/heads/main/bootstrap.sh | bash
 
