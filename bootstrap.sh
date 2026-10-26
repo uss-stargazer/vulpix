@@ -4,7 +4,7 @@ set -e
 
 VULPIX_REPO="${VULPIX_REPO:-uss-stargazer/vulpix}"
 VULPIX_BRANCH="${VULPIX_BRANCH:-main}"
-VULPIX_REPO_GIT="https://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@github.com/$VULPIX_REPO"
+VULPIX_REPO_GIT="https://github.com/$VULPIX_REPO"
 
 command_exists() { command -v "$1" &>/dev/null; }
 debug() { if [[ -v DEBUG ]]; then echo "DEBUG: $*" >&2; fi; }
