@@ -1,6 +1,5 @@
 # TODO list
 
-- v2.1: publish to pypi
 - v2.2: general manual packages & unix feats
     - new manual packages
         - bash
