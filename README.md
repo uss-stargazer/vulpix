@@ -28,11 +28,11 @@ some extra features:
 
 check out the [docs](docs/)!
 
-## installing
+## install
 
 if you already have python installed, just:
 
-    pip install git+https://github.com/uss-stargazer/vulpix
+    pip install vulpix
 
 or if not, you can run the bootstrap script, which checks dependencies, installs them (if possible),
 and finally installs vulpix (see [bootstrap docs](docs/bootstrap.md)):

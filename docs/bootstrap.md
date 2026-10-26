@@ -3,21 +3,20 @@
 the main target of bootstrap is to install the vulpix package with pip (or any other python manager
 that can expose target scripts). to do this, this is what the bootstrap scripts do:
 
-1. **ensure dependencies are installed**: `python` is required for obvious reasons. `git` is
-   required because `pip install git+{REPO}` requires it and that is how vulpix is installed (TODO:
-   upload pypi so this is not necessary). `pipx` is required on linux because `pip` in the global
-   environment isn't reliable (it's often managed by the distro).
+1. **ensure dependencies are installed**: `python` is required for obvious reasons. `pipx` is
+   required on linux because `pip` in the global environment isn't reliable (it's often managed by
+   the distro).
 
-- *for linux*: it's the os's job to compile and install packages like git/python/pipx, so bootstrap
+- *for linux*: it's the os's job to compile and install packages like python/pipx, so bootstrap
   just checks for existence (TODO: check linux distro to determine package manager, and bootstrap
   packages with that; requires more bultin vulpix package managers)
-- *for windows*: any of the two packages that aren't available are bootstrapped using the `manual`
-  package manager. obviously, the package manager can't be run because we could be bootstrapping
-  python, so we use the shell scripts located in `src/vulpix/package_managers/manual/packages`.
+- *for windows*: if `python` isn't available, it's bootstrapped using the `manual` package manager.
+  obviously, the package manager's python backend can't be run, so we use the shell scripts located
+  in `src/vulpix/package_managers/manual/packages`.
 - in either above case, if the bootstrap script bootstraps any packages, it writes writes a log of
   them (by manager) to `$VULPIX_DATA/bootstrapped.json`.
 
-2. **install vulpix**: simply runs `pip install git+{THIS_REPO}` or `pipx install git+{THIS_REPO}`
+2. **install vulpix**: simply runs `pip install vulpix` or `pipx install vulpix`
    (TODO: support other methods of installation; e.g. uv)
 
 3. **initial vulpix run**: it is required to run `vulpix sync` to finish the bootstrap process

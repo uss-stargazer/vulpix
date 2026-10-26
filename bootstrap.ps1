@@ -4,7 +4,6 @@ $ErrorActionPreference = 'Stop'
 
 $VULPIX_REPO = 'uss-stargazer/vulpix'
 $VULPIX_BRANCH = 'main'
-$VULPIX_REPO_GIT = "https://github.com/$VULPIX_REPO"
 $VULPIX_REPO_RAW = "https://raw.githubusercontent.com/$VULPIX_REPO/$VULPIX_BRANCH"
 
 if ($PSVersionTable.PSEdition -ne 'Desktop') {
@@ -38,7 +37,7 @@ if (Test-Admin) {
   $VULPIX_CONFIG = "$env:LOCALAPPDATA\vulpix"
 }
 
-# step 1: bootstrap python and git ----------------------------------------------------------------
+# step 1: bootstrap python ------------------------------------------------------------------------
 
 $bootstrappedPackages = @()
 
@@ -86,13 +85,13 @@ function Bootstrap-Packages([string[]]$Packages) {
     Set-Content (Join-Path $VULPIX_DATA "bootstrapped.json")
 }
 
-# python is obviously required for vulpix. git is required to `pip install git+...`.
-Bootstrap-Packages 'python', 'git'
+# python is obviously required for vulpix
+Bootstrap-Packages 'python'
 
 # step 2: install vulpix --------------------------------------------------------------------------
 
 Write-Host "INFO: pip install vulpix"
-python -m pip install "git+$VULPIX_REPO_GIT@$VULPIX_BRANCH"
+python -m pip install --upgrade vulpix
 
 if ($LASTEXITCODE -ne 0) {
   Write-Host "FATAL: install failed"
