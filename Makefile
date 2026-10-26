@@ -1,35 +1,47 @@
 VENV = .venv
-CLI = vulpix
 
 ifeq ($(OS),Windows_NT)
-	VENV_BIN = $(VENV)/Scripts
-	CLI_BIN = $(VENV_BIN)/$(CLI).exe
+	CLI = vulpix.exe
 	PYTHON = python
+	VENV_BIN = $(VENV)/Scripts
+	VENV_ACT = $(VENV_BIN)/Activate.ps1
+	ACT_CMD = powershell
 else
-	VENV_BIN = $(VENV)/bin
-	CLI_BIN = $(VENV_BIN)/$(CLI)
+	CLI = vulpix
 	PYTHON = python3
+	VENV_BIN = $(VENV)/bin
+	VENV_ACT = $(VENV_BIN)/activate.sh
+	ACT_CMD = source
 endif
 
-.PHONY: validate format lint all clean run
+.PHONY: validate format lint dev clean build run
 
-all: $(CLI_BIN) lint
+dev: $(VENV_BIN)/$(CLI) lint
 
-$(CLI_BIN): pyproject.toml
-	$(PYTHON) -m venv $(VENV)
+$(VENV_BIN)/$(CLI): $(VENV_ACT)
 	$(VENV_BIN)/pip install -e .
 
-validate:
-	pyright
+$(VENV_ACT): pyproject.toml
+	$(PYTHON) -m venv $(VENV)
+	$(ACT_CMD) $(VENV_ACT)
 
-format: validate
-	ruff format
+build: lint
+	$(PYTHON) -m build
 
 lint: format
 	ruff check --fix
 
-clean:
-	$(PYTHON) -c "import pathlib, shutil; ps = [*pathlib.Path('.').rglob('__pycache__'), pathlib.Path('.ruff_cache')]; [shutil.rmtree(p) for p in ps if p.exists()]"
+format: validate
+	ruff format
 
-run: all
-	./$(CLI_BIN)
+validate:
+	pyright
+
+install:
+	$(PYTHON) -m pip install -e .
+
+install_deps:
+	$(PYTHON) -m pip install --upgrade build pyright ruff
+
+clean:
+	$(PYTHON) -c "import pathlib, shutil, os; ps = [*pathlib.Path('.').rglob('__pycache__'), '.ruff_cache', 'dist', '.venv']; [shutil.rmtree(p) for p in ps if os.path.exists(p)]"
