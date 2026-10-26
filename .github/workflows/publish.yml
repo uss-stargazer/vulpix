@@ -1,0 +1,54 @@
+name: Publish as PyPI package
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build for publishing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '>=3.14'
+      - run: make install_deps
+      - run: make install
+      - run: make build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-dists
+          path: dist/
+
+  deploy-to-pypi-test:
+    name: Publish package distributions to Test PyPI
+    runs-on: ubuntu-latest
+    environment: testpypi
+    needs: build
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release-dists
+          path: dist/ 
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+        
+  deploy-to-pypi-prod:
+    name: Publish package distributions to Prod PyPi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags') && !github.event.release.prerelease
+    environment: pypi
+    needs: deploy-to-pypi-test
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release-dists
+          path: dist/ 
+      - uses: pypa/gh-action-pypi-publish@release/v1
