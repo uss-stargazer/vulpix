@@ -1,6 +1,7 @@
 # TODO list
 
-- v2.2: general manual packages & unix feats
+- v2.2: general manual packages & pacman manager
+    - add pacman manager (for arch linux and msys2; test on both)
     - new manual packages
         - bash
         - git
@@ -17,17 +18,16 @@
         - vim
         - ytdlp
         - fzf
-    - add apt manager
-- v2.3: windows feats
-    - new windows-specific manual packages
         - msys2
+- v2.3: windows feats and apt manager
+    - new windows-specific manual packages
         - windows_powershell
         - powertoys
         - winterm
         - psmux
         - btop4win
         - mpv (for both windows and linux)
-    - add pacman manager (for arch linux and msys2; test on both)
+    - add apt manager
     - add winget manager
 
 ## unversioned/general
